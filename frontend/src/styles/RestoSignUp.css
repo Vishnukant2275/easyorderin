@@ -1,0 +1,162 @@
+/* Background */
+.resto-signup-container {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Card styling */
+.resto-signup-card {
+  background: #fff;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  width: 100%;
+  max-width: 720px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.resto-signup-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* Form Heading */
+.resto-signup-title {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2rem;
+  background: linear-gradient(90deg, #4facfe, #ff6b6b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Label */
+.resto-signup-card label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.4rem;
+  display: inline-block;
+}
+
+/* Input & Textarea */
+.resto-signup-card input,
+.resto-signup-card textarea,
+.resto-signup-card select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  outline: none;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.resto-signup-card input:focus,
+.resto-signup-card textarea:focus,
+.resto-signup-card select:focus {
+  border-color: #4facfe;
+  box-shadow: 0 0 5px rgba(79, 172, 254, 0.5);
+}
+
+/* Disabled email input */
+input[type="email"]:disabled {
+  background-color: #f3f3f3;
+  color: #888;
+  cursor: not-allowed;
+  border: 1px solid #ccc;
+}
+
+/* File Input */
+.resto-signup-card input[type="file"] {
+  border: none;
+  padding: 0.5rem 0;
+  background: #f9fafb;
+}
+
+/* Grid fields (City, State, PinCode) */
+.resto-signup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+/* Buttons */
+.resto-signup-btn,
+.otp-btn {
+  width: 100%;
+  background: linear-gradient(90deg, #4facfe, #ff6b6b);
+  color: white;
+  padding: 0.9rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease-in-out;
+  border: none;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.otp-btn {
+  width: auto;
+  padding: 0.5rem 1rem;
+  margin-left: 0;
+  margin-top: 0.5rem;
+}
+
+.resto-signup-btn:disabled,
+.otp-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.resto-signup-btn:hover,
+.otp-btn:hover {
+  background: linear-gradient(90deg, #ff6b6b, #4facfe);
+  transform: scale(1.02);
+}
+
+/* Select styling */
+.resto-signup-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  outline: none;
+  font-size: 0.95rem;
+  background-color: #fff;
+  color: #374151;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='gray' class='bi bi-chevron-down' viewBox='0 0 16 16'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+  cursor: pointer;
+}
+
+.resto-signup-select:hover {
+  border-color: #4facfe;
+  box-shadow: 0 2px 6px rgba(79, 172, 254, 0.2);
+}
+
+.resto-signup-select option:hover {
+  background-color: #e5e7eb;
+}
+
+.resto-signup-select option:checked {
+  background-color: #4facfe;
+  color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .resto-signup-grid {
+    grid-template-columns: 1fr;
+  }
+}
