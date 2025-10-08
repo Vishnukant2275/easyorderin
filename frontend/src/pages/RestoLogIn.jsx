@@ -47,7 +47,7 @@ const RestoLogIn = () => {
 
       if (data.success) {
         toast.success("Email and password matched successfully");
-        console.log("Logged in restaurant ID:", data.restaurantId);
+        window.location.href = "/dashboard"
       } else {
         toast.error(data.message);
       }

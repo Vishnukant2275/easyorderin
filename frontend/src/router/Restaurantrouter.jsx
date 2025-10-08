@@ -10,7 +10,6 @@ const Restaurantrouter = () => {
       <Routes>
         <Route path="login" element={<RestoLogIn />} />
         <Route path="signup" element={<RestoSignUp />} />
-        
       </Routes>
     </Suspense>
   );

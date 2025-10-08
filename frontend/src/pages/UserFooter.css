@@ -1,0 +1,96 @@
+.user-footer {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-top: 1px solid #e0e0e0;
+  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.footer-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 60px;
+}
+
+.footer-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 8px 4px;
+  position: relative;
+}
+
+.footer-nav-item:hover {
+  background: #f8f9fa;
+}
+
+.footer-nav-item.active {
+  color: #007bff;
+}
+
+.footer-nav-item.active .nav-icon {
+  transform: translateY(-2px) scale(1.1);
+}
+
+.footer-nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: #007bff;
+  border-radius: 0 0 2px 2px;
+}
+
+.nav-icon {
+  font-size: 18px;
+  transition: all 0.2s ease;
+  filter: grayscale(1);
+}
+
+.footer-nav-item.active .nav-icon {
+  filter: grayscale(0);
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+}
+
+/* Safe Area Support for Mobile Notches */
+@supports (padding: max(0px)) {
+  .user-footer {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+  
+  .footer-nav {
+    height: calc(60px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Ensure proper container for the entire app */
+.user-layout {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  min-height: 100vh;
+}

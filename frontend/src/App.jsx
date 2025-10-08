@@ -1,15 +1,18 @@
-import { useState, useEffect, use } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AboutPage from "./pages/AboutPage";
-//routers import
-import Restaurantrouter from "./router/Restaurantrouter";
+// routers import
+import RestaurantRouter from "./router/RestaurantRouter";
 import UserRouter from "./router/UserRouter";
 
 import "bootstrap/dist/css/bootstrap.min.css";
-
 import "bootstrap-icons/font/bootstrap-icons.css";
-import api from "./services/api";
+
 import Home from "./layouts/Home";
+import RestaurantDashboard from "./layouts/RestaurantDashboard";
+import StatusCards from "./components/StatusCards";
+
+import DashboardRouter from "./router/DashboardRouter";
+import User from "./layouts/User";
 
 function App() {
   return (
@@ -17,10 +20,14 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />}>
           <Route index element={<AboutPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/restaurant/*" element={<Restaurantrouter />} />
-          <Route path="/user/*" element={<UserRouter />} />
+          <Route path="status" element={<StatusCards />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="restaurant/*" element={<RestaurantRouter />} />
         </Route>
+
+        {/* Separate route for dashboard - not nested under Home */}
+        <Route path="/dashboard/*" element={<DashboardRouter />} />
+        <Route path="/user/*" element={<UserRouter />} />
       </Routes>
     </BrowserRouter>
   );
