@@ -2,12 +2,14 @@ import React, { useState, useEffect, useContext } from "react";
 
 import api from "../services/api";
 import { useRestaurant } from "../context/RestaurantContext";
+import { toast } from "react-toastify";
 
 const foodCategories = ["starter", "main", "dessert", "beverage", "side"];
 
 const Menu = () => {
   // const [menuItems, setMenuItems] = useState([]);
-  const { menuItems, setMenuItems } = useRestaurant();
+
+  const { menuItems, setMenuItems, setRefreshTrigger } = useRestaurant();
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
@@ -56,62 +58,67 @@ const Menu = () => {
     e.preventDefault();
 
     try {
-      const formPayload = new FormData();
-      formPayload.append("name", formData.name);
-      formPayload.append("description", formData.description);
-      formPayload.append("price", formData.price);
-      formPayload.append("isVegetarian", formData.isVegetarian);
-      formPayload.append("foodCategory", formData.foodCategory);
-      formPayload.append("keyIngredients", formData.keyIngredients);
-      formPayload.append("isAvailable", formData.isAvailable);
-
-      if (formData.image) {
-        formPayload.append("image", formData.image);
-      }
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        isVegetarian: formData.isVegetarian,
+        foodCategory: formData.foodCategory,
+        keyIngredients: formData.keyIngredients,
+        isAvailable: formData.isAvailable,
+      };
 
       if (editingId) {
         // UPDATE EXISTING ITEM
-        const response = await fetch(`/api/restaurant/menu/${editingId}`, {
-          method: "PUT",
-          body: formPayload,
-        });
+        const response = await api.put(
+          `/restaurant/menu/${editingId}`,
+          payload
+        );
 
-        const data = await response.json();
-
-        if (data.msg || data._id) {
+        if (response.data.msg || response.data._id) {
           setMenuItems((prev) =>
             prev.map((item) =>
-              item._id === editingId ? { ...item, ...formData } : item
+              item._id === editingId ? { ...item, ...payload } : item
             )
           );
           resetForm();
-          alert("Menu item updated successfully!");
+          toast.success("Menu item updated successfully!");
         } else {
-          alert(data.error || "Update failed");
+          toast.error(response.data.error || "Update failed");
         }
       } else {
-        // CREATE NEW ITEM
-        const response = await fetch("/api/restaurant/upload/menu", {
-          method: "POST",
-          body: formPayload,
+        // For new items, still use FormData if you need image upload
+        const formPayload = new FormData();
+        Object.keys(payload).forEach((key) => {
+          formPayload.append(key, payload[key]);
         });
 
-        const data = await response.json();
+        if (formData.image) {
+          formPayload.append("image", formData.image);
+        }
 
-        if (data.msg) {
+        const response = await api.post(
+          "/restaurant/upload/menu",
+          formPayload,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+
+        if (response.data.msg) {
           setMenuItems((prev) => [
             ...prev,
-            { ...formData, _id: data._id || Date.now() },
+            { ...payload, _id: response.data._id || Date.now() },
           ]);
           resetForm();
-          alert(data.msg);
+          toast.info(response.data.msg);
         } else {
-          alert(data.error || "Upload failed");
+          toast.warn(response.data.error || "Upload failed");
         }
       }
     } catch (error) {
       console.error(error);
-      alert("Something went wrong");
+      toast.warn("Something went wrong");
     }
     setRefreshTrigger((prev) => prev + 1);
   };

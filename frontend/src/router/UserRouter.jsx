@@ -3,6 +3,10 @@ import UserLogin from "../pages/UserLogin";
 import UserSignUp from "../pages/UserSignUp";
 import UserMenu from "../pages/UserMenu";
 import User from "../layouts/User";
+import UserCart from "../pages/UserCart";
+import UserOrders from "../pages/UserOrders";
+import UserAccount from "../pages/UserAccount";
+
 
 const UserRouter = () => {
   return (
@@ -12,23 +16,12 @@ const UserRouter = () => {
         <Route index element={<UserMenu />} />
 
         {/* Nested routes under / */}
-        <Route path="menu" element={<UserMenu />} />
+        <Route path="getMenu" element={<UserMenu />} />
         <Route path="login" element={<UserLogin />} />
         <Route path="signup" element={<UserSignUp />} />
-
-        {/* Add other routes */}
-        <Route
-          path="cart"
-          element={<div className="mobile-page">Cart Page</div>}
-        />
-        <Route
-          path="orders"
-          element={<div className="mobile-page">Orders Page</div>}
-        />
-        <Route
-          path="account"
-          element={<div className="mobile-page">Account Page</div>}
-        />
+        <Route path="cart" element={<UserCart />} />
+        <Route path="orders" element={<UserOrders />} />
+        <Route path="account" element={<UserAccount />} />
       </Route>
     </Routes>
   );

@@ -205,3 +205,75 @@ input {
 .forgot-password a:hover {
   text-decoration: underline;
 }
+/* ----------------------------------------------- */
+/* 🌟 MOBILE VERSION STYLES (Add below existing CSS) */
+/* ----------------------------------------------- */
+@media (max-width: 600px) {
+  /* Background & layout adjustments */
+  .login-container {
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 30px 15px;
+    background-size: cover;
+    background-position: center;
+    backdrop-filter: blur(2px);
+  }
+
+  /* Login box compact styling */
+  .login-box {
+    width: 100%;
+    max-width: 90%;
+    padding: 25px 20px;
+    margin-top: 60px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Title */
+  .login-box h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* Logo */
+  .logo-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+  }
+
+  /* Input fields */
+  .input-icon-wrapper input {
+    font-size: 15px;
+    padding: 10px 10px 10px 38px;
+    border-radius: 6px;
+  }
+
+  .input-icon {
+    font-size: 14px;
+    left: 12px;
+  }
+
+  /* Button */
+  .login-button {
+    font-size: 15px;
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  .login-button:hover {
+    transform: scale(1.02);
+  }
+
+  /* Forgot password */
+  .forgot-password {
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* Toastify on small screen */
+  .Toastify__toast-container {
+    width: 90% !important;
+    left: 5% !important;
+  }
+}

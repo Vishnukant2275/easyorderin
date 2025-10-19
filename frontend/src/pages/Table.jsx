@@ -4,7 +4,7 @@ import api from "../services/api";
 import { useRestaurant } from "../context/RestaurantContext";
 
 const Table = () => {
-  const { table, setTable, setRefreshTrigger } = useRestaurant();
+  const { table, setTable, setRefreshTrigger, restaurant } = useRestaurant();
 
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -73,12 +73,6 @@ const Table = () => {
     }
   };
 
-  const handleEdit = (table) => {
-    setFormData(table);
-    setEditMode(true);
-    setShowForm(true);
-  };
-
   // FIXED: Add API call to update table status
 
   const resetForm = () => {
@@ -88,6 +82,10 @@ const Table = () => {
     setEditMode(false);
     setShowForm(false);
     setSelectedTable(null);
+  };
+  const handleViewOrders = (tableItem) => {
+    alert(`Viewing current orders for Table ${tableItem.tableNumber}`);
+    console.log("tableItem:", tableItem);
   };
 
   const downloadQRCode = (tableId, tableNumber) => {
@@ -323,7 +321,7 @@ const Table = () => {
             <div key={tableItem._id} className="col-md-6 col-lg-4 col-xl-3">
               <div className="card h-100">
                 <div className="card-header d-flex justify-content-between align-items-center">
-                  <strong>Table {tableItem.numberOfTables}</strong>
+                  <strong>Table {tableItem.tableNumber}</strong>
                   {getStatusBadge(tableItem.status)}
                 </div>
 
@@ -343,7 +341,7 @@ const Table = () => {
                     >
                       <QRCodeSVG
                         ref={(el) => (qrRefs.current[tableItem._id] = el)}
-                        value={tableItem.qrCode}
+                        value={` http://192.168.1.5:5173/restaurant/${restaurant._id}/table/${tableItem.tableNumber}/getMenu`}
                         size={qrSize}
                         level="H"
                         includeMargin={true}
@@ -351,16 +349,8 @@ const Table = () => {
                     </div>
                   </div>
 
-                  {/* Table Info */}
-                  <div className="text-muted small mb-3">
-                    <div>Scan to order</div>
-                  </div>
-
                   {/* Quick Status Update - FIXED: Added onClick handler */}
                   <div className="mb-3">
-                    <small className="text-muted d-block mb-1">
-                      Update Status:
-                    </small>
                     <div className="btn-group w-100">
                       {statusOptions.map((status) => (
                         <button
@@ -373,6 +363,14 @@ const Table = () => {
                         </button>
                       ))}
                     </div>
+                    {tableItem.status === "occupied" && (
+                      <small
+                        className="current-orders-link"
+                        onClick={() => handleViewOrders(tableItem)}
+                      >
+                        View Current Orders
+                      </small>
+                    )}
                   </div>
                 </div>
 
@@ -423,7 +421,7 @@ const Table = () => {
               </div>
               <div className="modal-body text-center">
                 <QRCodeSVG
-                  value={selectedTable.qrCode}
+                  value={`/restaurant/${restaurant._id}/table/${selectedTable.tableNumber}/getMenu`}
                   size={256}
                   level="H"
                   includeMargin={true}

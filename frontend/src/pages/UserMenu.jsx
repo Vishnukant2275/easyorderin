@@ -1,21 +1,26 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
 import "../styles/UserMenu.css";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../services/api";
+import { useCart } from "../context/CartContext";
 
 const UserMenu = () => {
-  const { tableId } = useParams();
+  const { restaurantID, tableNumber } = useParams();
   const [menuItems, setMenuItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
-  const [cart, setCart] = useState([]);
+  const { cart, addToCart, updateQuantity, getCartTotal, getTotalItems } = useCart();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
 
+  // Define categories - you might want to make this dynamic based on actual menu categories
   const categories = {
     "best-deals": { name: "Our Best Deals", icon: "🔥" },
-    soups: { name: "Veg Soups", icon: "🥣", count: "6 items" },
+    soups: { name: "Veg Soups", icon: "🥣" },
     starters: { name: "Starters", icon: "🍢" },
     "main-course": { name: "Main Course", icon: "🍛" },
     beverages: { name: "Beverages", icon: "🥤" },
@@ -24,71 +29,92 @@ const UserMenu = () => {
   };
 
   useEffect(() => {
-    setLoading(true);
-    const mockMenu = [
-      {
-        id: 1,
-        name: "Veg Noodles",
-        price: 110,
-        category: "best-deals",
-        isVegetarian: true,
-        popular: true,
-      },
-      {
-        id: 2,
-        name: "Aloo Tikki Burger",
-        price: 70,
-        category: "best-deals",
-        isVegetarian: true,
-      },
-      {
-        id: 3,
-        name: "Per",
-        price: 13,
-        category: "best-deals",
-        isVegetarian: true,
-      },
-      {
-        id: 4,
-        name: "Veg Clear Soup",
-        description: "Vegetable stock with chopped vegetables",
-        price: 110,
-        category: "soups",
-        isVegetarian: true,
-      },
-      {
-        id: 5,
-        name: "Lemon Coriander Soup",
-        description: "Tangy lemon and fresh coriander",
-        price: 110,
-        category: "soups",
-        isVegetarian: true,
-      },
-      {
-        id: 6,
-        name: "Cream Of Tomato Soup",
-        price: 130,
-        category: "soups",
-        isVegetarian: true,
-      },
-      {
-        id: 7,
-        name: "Spring Rolls",
-        price: 120,
-        category: "starters",
-        isVegetarian: true,
-      },
-      {
-        id: 8,
-        name: "Paneer Tikka",
-        price: 180,
-        category: "starters",
-        isVegetarian: true,
-      },
-    ];
-    setMenuItems(mockMenu);
-    setLoading(false);
-  }, [tableId]);
+    const fetchMenu = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (!restaurantID || !tableNumber) {
+          setError("Restaurant ID or Table Number is missing");
+          setLoading(false);
+          return;
+        }
+
+        const res = await api.get(
+          `/restaurant/${restaurantID}/table/${tableNumber}/getMenu`
+        );
+
+        console.log("Table Menu response:", res.data);
+
+        if (res.data.success) {
+          // Set restaurant info
+          setRestaurantInfo({
+            name: res.data.restaurant.name,
+            type: res.data.restaurant.type,
+          });
+
+          // Set menu items - assuming the API returns menu items in the expected format
+          // You might need to transform the data to match your component's expected structure
+          const menuData = res.data.menu || [];
+          setMenuItems(
+            menuData.map((item) => ({
+              id: item._id || item.id,
+              name: item.name,
+              price: item.price,
+              category: item.category || "main-course", // default category if not provided
+              isVegetarian: item.isVegetarian || false,
+              description: item.description,
+              image: item.image,
+              isAvailable: item.isAvailable,
+              popular: item.popular || false,
+              // Add any other properties your component expects
+            }))
+          );
+        } else {
+          setError(res.data.message || "Failed to fetch menu");
+          setMenuItems([]);
+        }
+      } catch (err) {
+        console.error("Error fetching menu:", err);
+        setError(
+          err.response?.data?.message ||
+            "Failed to load menu. Please try again."
+        );
+        setMenuItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenu();
+  }, [restaurantID, tableNumber]);
+
+  // Dynamically generate categories from actual menu items
+  const dynamicCategories = useMemo(() => {
+    const categorySet = new Set();
+    menuItems.forEach((item) => {
+      if (item.category) {
+        categorySet.add(item.category);
+      }
+    });
+
+    // Merge predefined categories with actual categories from menu
+    const mergedCategories = { ...categories };
+
+    Array.from(categorySet).forEach((category) => {
+      if (!mergedCategories[category]) {
+        // Create a default category entry if it doesn't exist
+        mergedCategories[category] = {
+          name:
+            category.charAt(0).toUpperCase() +
+            category.slice(1).replace("-", " "),
+          icon: "🍽️", // default icon
+        };
+      }
+    });
+
+    return mergedCategories;
+  }, [menuItems]);
 
   const groupedItems = useMemo(() => {
     const filtered = menuItems.filter((item) => {
@@ -110,8 +136,9 @@ const UserMenu = () => {
     });
 
     return filtered.reduce((acc, item) => {
-      if (!acc[item.category]) acc[item.category] = [];
-      acc[item.category].push(item);
+      const category = item.category || "uncategorized";
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(item);
       return acc;
     }, {});
   }, [menuItems, searchTerm, filterType, selectedCategory]);
@@ -141,39 +168,45 @@ const UserMenu = () => {
     setShowCategoryFilter(false);
   };
 
-  const updateCart = (item, increment = true) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) {
-        if (increment) {
-          return prev.map((i) =>
-            i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-          );
-        } else {
-          return existing.quantity > 1
-            ? prev.map((i) =>
-                i.id === item.id ? { ...i, quantity: i.quantity - 1 } : i
-              )
-            : prev.filter((i) => i.id !== item.id);
-        }
-      } else if (increment) {
-        return [...prev, { ...item, quantity: 1 }];
-      }
-      return prev;
-    });
-  };
-
-  const cartTotal = cart.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
-  );
-  const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+  const cartTotal = getCartTotal();
+  const totalItems = getTotalItems();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
       <div className="user-menu-loading">
         <div className="loading-spinner"></div>
         <p>Loading menu...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="user-menu-error">
+        <div className="error-icon">❌</div>
+        <h3>Table No. {tableNumber} is already Occupied</h3>
+        <p>{error}</p>
+        <button
+          className="retry-btn bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-xl shadow transition-all duration-300 flex items-center justify-center gap-2"
+          onClick={() => {
+            const ua = navigator.userAgent.toLowerCase();
+            if (ua.includes("android")) {
+              // Try Android intent (works on some devices)
+              window.location.href =
+                "intent://scan/#Intent;scheme=google.lens;package=com.google.ar.lens;end";
+              // Fallback if intent fails
+              setTimeout(() => {
+                window.open("https://lens.google/", "_blank");
+              }, 1500);
+            } else {
+              // Non-Android fallback
+              window.open("https://lens.google/", "_blank");
+            }
+          }}
+        >
+          Try another Table
+        </button>
       </div>
     );
   }
@@ -219,7 +252,9 @@ const UserMenu = () => {
       {selectedCategory && (
         <div className="active-filter-section">
           <div className="active-filter">
-            <span>Filtered by: {categories[selectedCategory]?.name}</span>
+            <span>
+              Filtered by: {dynamicCategories[selectedCategory]?.name}
+            </span>
             <button className="clear-filter-btn" onClick={clearCategoryFilter}>
               ✕
             </button>
@@ -229,7 +264,7 @@ const UserMenu = () => {
 
       {/* Menu Items */}
       <main className="menu-items-section">
-        {Object.entries(categories).map(([key, cat]) => {
+        {Object.entries(dynamicCategories).map(([key, cat]) => {
           const items = groupedItems[key];
           if (!items?.length) return null;
 
@@ -244,7 +279,9 @@ const UserMenu = () => {
                   <span className="category-icon">{cat.icon}</span>
                   <h2 className="category-title">{cat.name}</h2>
                 </div>
-                {cat.count && <span className="items-count">{cat.count}</span>}
+                <span className="items-count">
+                  {items.length} item{items.length !== 1 ? "s" : ""}
+                </span>
               </div>
 
               <div className="items-grid">
@@ -257,16 +294,24 @@ const UserMenu = () => {
                       key={item.id}
                       className={`menu-item-card ${
                         item.popular ? "popular" : ""
-                      }`}
+                      } ${!item.isAvailable ? "unavailable" : ""}`}
                     >
                       {item.popular && (
                         <div className="popular-badge">🔥 Popular</div>
                       )}
 
+                      {!item.isAvailable && (
+                        <div className="unavailable-badge">Unavailable</div>
+                      )}
+
                       {/* Menu Item Image */}
                       <div className="item-image">
                         <img
-                          src={item.image || "/api/placeholder/300/200"}
+                          src={
+                            item.image
+                              ? `${window.location.origin}/uploads/${item.image}`
+                              : ""
+                          }
                           alt={item.name}
                           className="menu-img"
                           onError={(e) => {
@@ -276,7 +321,6 @@ const UserMenu = () => {
                         />
                         <div className="image-overlay"></div>
                       </div>
-
                       <div className="item-content">
                         <div className="item-info">
                           <div className="item-header">
@@ -322,7 +366,7 @@ const UserMenu = () => {
                               <div className="cart-controls">
                                 <button
                                   className="quantity-btn"
-                                  onClick={() => updateCart(item, false)}
+                                  onClick={() => updateQuantity(item.id, -1)}
                                 >
                                   -
                                 </button>
@@ -331,7 +375,7 @@ const UserMenu = () => {
                                 </span>
                                 <button
                                   className="quantity-btn"
-                                  onClick={() => updateCart(item, true)}
+                                  onClick={() => addToCart(item)}
                                 >
                                   +
                                 </button>
@@ -339,7 +383,8 @@ const UserMenu = () => {
                             ) : (
                               <button
                                 className="add-to-cart-btn"
-                                onClick={() => updateCart(item, true)}
+                                onClick={() => addToCart(item)}
+                                disabled={!item.isAvailable}
                               >
                                 <span className="btn-icon">+</span>
                                 Add
@@ -396,7 +441,7 @@ const UserMenu = () => {
               <span className="filter-category-icon">📋</span>
               <span className="filter-category-name">All Categories</span>
             </button>
-            {Object.entries(categories).map(([key, cat]) => (
+            {Object.entries(dynamicCategories).map(([key, cat]) => (
               <button
                 key={key}
                 className={`filter-category-btn ${
@@ -430,9 +475,13 @@ const UserMenu = () => {
               <span className="cart-total">₹{cartTotal}</span>
             </div>
           </div>
-          <button className="view-cart-btn">
-            View Cart
-            <span className="arrow">→</span>
+          <button
+            className="view-cart-btn"
+            onClick={() =>
+              navigate(`/restaurant/${restaurantID}/table/${tableNumber}/cart`)
+            }
+          >
+            View Cart <span className="arrow">→</span>
           </button>
         </div>
       )}

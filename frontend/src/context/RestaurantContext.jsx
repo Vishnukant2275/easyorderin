@@ -8,9 +8,11 @@ export const RestaurantProvider = ({ children }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [orders, setOrders] = useState([]);
   const [table, setTable] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  //fetching restaurant data
   useEffect(() => {
     const fetchRestaurant = async () => {
       try {
@@ -28,7 +30,7 @@ export const RestaurantProvider = ({ children }) => {
 
     fetchRestaurant();
   }, [refreshTrigger]);
-
+//fetching menu
   useEffect(() => {
     const fetchMenu = async () => {
       try {
@@ -51,7 +53,7 @@ export const RestaurantProvider = ({ children }) => {
 
     fetchMenu();
   }, [refreshTrigger]);
-
+//fetching table data
   useEffect(() => {
     const getTables = async () => {
       try {
@@ -65,6 +67,32 @@ export const RestaurantProvider = ({ children }) => {
     getTables();
   }, [refreshTrigger]);
 
+  //fetching order data
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/restaurant/orders");
+        if (res.data.success && Array.isArray(res.data.orders)) {
+          setOrders(res.data.orders);
+          console.log("Orders:" , res.data.orders)
+        } else {
+          setOrders([]);
+        }
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+        setError("Failed to load orders");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+
+
+
   return (
     <RestaurantContext.Provider
       value={{
@@ -72,6 +100,7 @@ export const RestaurantProvider = ({ children }) => {
         setRestaurant,
         menuItems,
         setMenuItems,
+
         orders,
         setOrders,
         table,

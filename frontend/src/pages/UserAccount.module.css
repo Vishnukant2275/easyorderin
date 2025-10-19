@@ -1,0 +1,749 @@
+/* UserAccount.module.css */
+
+/* Container Styles */
+.accountContainer {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding: 0;
+  margin: 0;
+}
+
+/* Header Styles */
+.accountHeader {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem 1.5rem 1.5rem;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.userAvatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatarText {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.userInfo {
+  flex: 1;
+}
+
+.userName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  color: white;
+}
+
+.userEmail {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin: 0 0 1rem 0;
+}
+
+.userStats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.stat strong {
+  color: white;
+  opacity: 1;
+}
+
+/* Tab Navigation */
+.accountTabs {
+  display: flex;
+  background: white;
+  margin: 0 1rem;
+  border-radius: 15px;
+  padding: 0.5rem;
+  transform: translateY(-10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: #6c757d;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.tab:hover {
+  background: #f8f9fa;
+}
+
+.activeTab {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.tabIcon {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Main Content */
+.accountMain {
+  padding: 1rem 1.5rem 2rem;
+}
+
+.tabContent {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Profile Section */
+.profileSection {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.sectionHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+  flex: 1;
+}
+
+.sectionHeader button {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.sectionHeader button:hover {
+  background: #5a6fd8;
+}
+
+/* Form Styles */
+.formGroup {
+  margin-bottom: 1.25rem;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 0.875rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.formActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.formActions button[type="submit"] {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  flex: 2;
+  transition: background 0.3s ease;
+}
+
+.formActions button[type="submit"]:hover:not(:disabled) {
+  background: #5a6fd8;
+}
+
+.formActions button[type="button"] {
+  background: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  flex: 1;
+  transition: background 0.3s ease;
+}
+
+.formActions button[type="button"]:hover {
+  background: #cbd5e0;
+}
+
+.formActions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Info Card */
+.infoCard {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.infoRow span:first-child {
+  font-weight: 500;
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+.infoRow span:last-child {
+  color: #2d3748;
+  font-weight: 500;
+}
+
+/* Favorites */
+.favoritesGrid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.favoriteItem {
+  background: #fff5f5;
+  color: #c53030;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  border-left: 4px solid #fc8181;
+}
+
+/* Orders List */
+.ordersList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.orderCard {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.orderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.orderHeader h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 0.25rem 0;
+}
+
+.orderHeader span {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.orderDetails {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.orderDetails span {
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+.orderDetails span:last-child {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 1rem;
+}
+
+.orderItemPreview {
+  font-size: 0.875rem;
+  color: #4a5568;
+  padding: 0.25rem 0;
+}
+
+.moreItems {
+  font-size: 0.8rem;
+  color: #718096;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.orderActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.orderActions button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #667eea;
+  background: white;
+  color: #667eea;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.orderActions button:hover {
+  background: #667eea;
+  color: white;
+}
+
+.orderActions button:last-child {
+  background: #667eea;
+  color: white;
+}
+
+.orderActions button:last-child:hover {
+  background: #5a6fd8;
+}
+
+/* Status Badges */
+.statusBadge {
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusPending {
+  background: #fffaf0;
+  color: #dd6b20;
+  border: 1px solid #fed7aa;
+}
+
+.statusConfirmed {
+  background: #f0fff4;
+  color: #38a169;
+  border: 1px solid #9ae6b4;
+}
+
+.statusPreparing {
+  background: #ebf8ff;
+  color: #3182ce;
+  border: 1px solid #90cdf4;
+}
+
+.statusReady {
+  background: #e6fffa;
+  color: #319795;
+  border: 1px solid #81e6d9;
+}
+
+.statusCompleted {
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+}
+
+.statusCancelled {
+  background: #fff5f5;
+  color: #e53e3e;
+  border: 1px solid #fc8181;
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #718096;
+}
+
+.emptyState div:first-child {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.emptyState h3 {
+  font-size: 1.25rem;
+  color: #4a5568;
+  margin: 0 0 0.5rem 0;
+}
+
+.emptyState p {
+  margin: 0 0 1.5rem 0;
+}
+
+.emptyState button {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.emptyState button:hover {
+  background: #5a6fd8;
+}
+
+/* Settings */
+.settingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.settingItem > div {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.settingItem span:first-child {
+  font-size: 1.25rem;
+}
+
+.settingItem div div span {
+  font-weight: 500;
+  color: #2d3748;
+  font-size: 0.875rem;
+}
+
+/* Toggle Switch */
+.toggleSwitch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.toggleSwitch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e0;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #667eea;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+/* Logout Section */
+.logoutSection {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.logoutSection button {
+  background: #fed7d7;
+  color: #c53030;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 200px;
+}
+
+.logoutSection button:hover {
+  background: #feb2b2;
+  transform: translateY(-2px);
+}
+
+/* Login Container */
+.loginContainer {
+  min-height: 100vh;
+  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1.5rem;
+}
+
+.loginContainer h2 {
+  color: white;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.loginForm {
+    background: white;
+    border-radius: 44px;
+    padding: 2rem 1.5rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 37px rgba(0, 0, 0, 0.5);
+    margin-top: -100px;
+}
+
+.loginForm .formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.loginForm label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.loginForm input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.loginForm input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.loginForm input:disabled {
+  background: #f7fafc;
+  color: #a0aec0;
+}
+
+.otpHint {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.otpButton {
+  width: 100%;
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-bottom: 1rem;
+  position: relative;
+  min-height: 52px;
+}
+
+.otpButton:hover:not(:disabled) {
+  background: #5a6fd8;
+}
+
+.otpButton:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.changeNumberButton {
+  width: 100%;
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+  padding: 0.875rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.changeNumberButton:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Loading Spinner */
+.loadingSpinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design for Tablets and Desktops */
+@media (min-width: 768px) {
+  .accountContainer {
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+    min-height: 100vh;
+  }
+  
+  .loginContainer {
+    padding: 3rem;
+  }
+  
+  .loginForm {
+    padding: 2.5rem;
+  }
+  
+  .accountTabs {
+    margin: 21px 2rem;
+    margin-bottom: 0px;
+    transform: translateY(-15px);
+  }
+  
+  .accountMain {
+    padding: 0rem 2rem 0rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .accountHeader,
+  .accountTabs,
+  .orderActions,
+  .logoutSection,
+  .sectionHeader button {
+    display: none;
+  }
+  
+  .accountContainer {
+    background: white;
+    box-shadow: none;
+  }
+  
+  .orderCard {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}

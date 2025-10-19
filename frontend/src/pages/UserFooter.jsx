@@ -1,30 +1,64 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./UserFooter.css";
 
 const UserFooter = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { restaurantID, tableNumber } = useParams();
   const [activeTab, setActiveTab] = useState("menu");
 
   const footerItems = [
-    { key: "menu", label: "Menu", icon: "📋", path: "/menu" },
-    { key: "cart", label: "Cart", icon: "🛒", path: "/cart" },
-    { key: "orders", label: "Orders", icon: "📦", path: "/orders" },
-    { key: "account", label: "Account", icon: "👤", path: "/account" },
+    {
+      key: "menu",
+      label: "Menu",
+      icon: "📋",
+      path: `/restaurant/${restaurantID}/table/${tableNumber}/getMenu`,
+    },
+    {
+      key: "cart",
+      label: "Cart",
+      icon: "🛒",
+      path: `/restaurant/${restaurantID}/table/${tableNumber}/cart`,
+    },
+    {
+      key: "orders",
+      label: "Orders",
+      icon: "📦",
+      path: `/restaurant/${restaurantID}/table/${tableNumber}/orders`,
+    },
+    {
+      key: "account",
+      label: "Account",
+      icon: "👤",
+      path: `/restaurant/${restaurantID}/table/${tableNumber}/account`,
+    },
   ];
 
   // Update active tab based on current route
   useEffect(() => {
     const currentPath = location.pathname;
-    const activeItem = footerItems.find(
-      (item) =>
-        currentPath === item.path || currentPath.startsWith(item.path + "/")
-    );
+    
+    // Check which tab matches the current path
+    const activeItem = footerItems.find((item) => {
+      // Exact match
+      if (currentPath === item.path) return true;
+      
+      // Match base path (for nested routes)
+      const basePath = `/restaurant/${restaurantID}/table/${tableNumber}`;
+      if (currentPath.startsWith(basePath)) {
+        const currentSection = currentPath.replace(basePath, "").split("/")[1];
+        const itemSection = item.path.replace(basePath, "").split("/")[1];
+        return currentSection === itemSection;
+      }
+      
+      return false;
+    });
+    
     if (activeItem) {
       setActiveTab(activeItem.key);
     }
-  }, [location.pathname]);
+  }, [location.pathname, restaurantID, tableNumber]);
 
   const handleTabClick = (item) => {
     setActiveTab(item.key);

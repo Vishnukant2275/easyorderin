@@ -1,186 +1,246 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
+import { useRestaurant } from "../context/RestaurantContext";
 
-const PendingOrders = ({ allOrders = [], updateOrderStatus }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [timeElapsed, setTimeElapsed] = useState({});
+const PendingOrders = ({ updateOrderStatus }) => {
+  const { orders } = useRestaurant();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [elapsedTimes, setElapsedTimes] = useState({});
 
-  // Safe filtering with default empty array
-  const pendingOrders = (allOrders || []).filter(order => order.status === 'pending');
-  const completedOrders = (allOrders || []).filter(order => order.status === 'completed');
+  // 🔹 Categorize orders once (memoized for performance)
+  const { pendingOrders, preparingOrders, servedOrders } = useMemo(() => {
+    const result = {
+      pendingOrders: [],
+      preparingOrders: [],
+      servedOrders: [],
+    };
 
+    (orders || []).forEach((order) => {
+      if (!order?.status) return;
+      if (order.status === "pending") result.pendingOrders.push(order);
+      else if (order.status === "preparing") result.preparingOrders.push(order);
+      else if (order.status === "served") result.servedOrders.push(order);
+    });
+
+    return result;
+  }, [orders]);
+
+  // 🔹 Compute elapsed time since order creation (updated every minute)
   useEffect(() => {
-    const interval = setInterval(() => {
-      const newTimeElapsed = {};
-      pendingOrders.forEach(order => {
-        const orderTime = new Date(order.orderTime);
-        const now = new Date();
-        const diffMs = now - orderTime;
-        const diffMins = Math.floor(diffMs / 60000);
-        newTimeElapsed[order.id] = diffMins;
-      });
-      setTimeElapsed(newTimeElapsed);
-    }, 60000);
+    const updateElapsed = () => {
+      const now = new Date();
+      const newElapsed = {};
 
+      pendingOrders.forEach((order) => {
+        if (!order?.createdAt) return;
+        const diffMs = now - new Date(order.createdAt);
+        newElapsed[order._id] = Math.floor(diffMs / 60000); // minutes
+      });
+
+      setElapsedTimes(newElapsed);
+    };
+
+    updateElapsed(); // initial run
+    const interval = setInterval(updateElapsed, 60000);
     return () => clearInterval(interval);
   }, [pendingOrders]);
 
-  const filteredOrders = pendingOrders.filter(order =>
-    order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.tableNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 🔹 Filtered orders based on search input
+  const filteredOrders = useMemo(() => {
+    const search = searchTerm.toLowerCase().trim();
+    if (!search) return pendingOrders;
 
+    return pendingOrders.filter((order) => {
+      const table = order?.tableNumber?.toString() || "";
+      const id = order?._id?.toLowerCase() || "";
+      return table.includes(search) || id.includes(search);
+    });
+  }, [pendingOrders, searchTerm]);
+
+  // 🔹 Utility functions
   const getTimeAlertClass = (minutes) => {
-    if (minutes > 30) return 'danger';
-    if (minutes > 15) return 'warning';
-    return 'success';
+    if (minutes > 30) return "danger";
+    if (minutes > 15) return "warning";
+    return "success";
   };
+
+  const calculateOrderTotal = (order) =>
+    (order?.menuItems || []).reduce(
+      (sum, item) => sum + (item.quantity || 0) * (item.price || 0),
+      0
+    );
+
+  // 🔹 Render helpers
+  const renderOrderCard = (order) => {
+    const minutes = elapsedTimes[order._id] || 0;
+    const timeClass = getTimeAlertClass(minutes);
+    const total =
+      order?.totalPrice || calculateOrderTotal(order);
+
+    return (
+      <div key={order._id} className="col-md-6 col-lg-4">
+        <div
+          className={`card h-100 border-${timeClass}`}
+          style={{ borderWidth: "2px" }}
+        >
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <strong>Order #{order._id?.slice(0, 8)}</strong>
+            <span className="badge bg-warning text-capitalize">
+              {order.status}
+            </span>
+          </div>
+
+          <div className="card-body">
+            <div className="d-flex justify-content-between mb-2">
+              <span>
+                <i className="bi bi-table me-2"></i>Table{" "}
+                {order.tableNumber || "N/A"}
+              </span>
+              <span className="badge bg-light text-dark">
+                {order.menuItems?.length || 0} items
+              </span>
+            </div>
+
+            <div className="mb-3">
+              <strong>Items:</strong>
+              {(order.menuItems || []).map((item, idx) => (
+                <div
+                  key={idx}
+                  className="d-flex justify-content-between small mt-1"
+                >
+                  <div>
+                    {item.quantity}× {item.name}
+                    {item.notes && (
+                      <div className="text-muted">
+                        <small>Note: {item.notes}</small>
+                      </div>
+                    )}
+                  </div>
+                  <span>
+                    ₹{(item.quantity * item.price).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <small className="text-muted d-block">
+                  Ordered:{" "}
+                  {order.createdAt
+                    ? new Date(order.createdAt).toLocaleTimeString()
+                    : "Unknown"}
+                </small>
+                <small className={`text-${timeClass}`}>
+                  <i className="bi bi-clock me-1"></i>
+                  {minutes} min ago
+                </small>
+              </div>
+              <strong className="text-primary">
+                ₹{total.toFixed(2)}
+              </strong>
+            </div>
+
+            {order.isPaid && (
+              <div className="mt-2">
+                <span className="badge bg-success">
+                  <i className="bi bi-check-circle me-1"></i>Paid
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="card-footer bg-transparent">
+            <div className="btn-group w-100">
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() =>
+                  updateOrderStatus(order._id, "preparing")
+                }
+              >
+                Start Preparing
+              </button>
+              <button
+                className="btn btn-sm btn-outline-danger"
+                onClick={() =>
+                  window.confirm("Cancel this order?") &&
+                  updateOrderStatus(order._id, "cancelled")
+                }
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 🔹 Empty state
+  if (filteredOrders.length === 0) {
+    return (
+      <div className="text-center py-5">
+        <i
+          className="bi bi-check-circle-fill text-success"
+          style={{ fontSize: "3rem" }}
+        ></i>
+        <h4 className="mt-3 text-muted">No pending orders</h4>
+        <p className="text-muted">All orders are being processed!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container-fluid">
+      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="mb-1">Pending Orders</h2>
           <p className="text-muted mb-0">
-            {pendingOrders.length} order{pendingOrders.length !== 1 ? 's' : ''} waiting
+            {pendingOrders.length} waiting • {preparingOrders.length} preparing
           </p>
         </div>
-        <div className="input-group" style={{ width: '300px' }}>
+        <div className="input-group" style={{ width: "300px" }}>
           <span className="input-group-text">
             <i className="bi bi-search"></i>
           </span>
           <input
             type="text"
             className="form-control"
-            placeholder="Search pending orders..."
+            placeholder="Search by table number or order ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Pending Orders Grid */}
+      {/* Orders Grid */}
       <div className="row g-3 mb-5">
-        {filteredOrders.length === 0 ? (
-          <div className="col-12">
-            <div className="text-center py-5">
-              <i className="bi bi-check-circle-fill text-success" style={{ fontSize: '3rem' }}></i>
-              <h4 className="mt-3 text-muted">No pending orders</h4>
-              <p className="text-muted">All orders are being processed!</p>
-            </div>
-          </div>
-        ) : (
-          filteredOrders.map((order) => (
-            <div key={order.id} className="col-md-6 col-lg-4">
-              <div 
-                className={`card h-100 border-${getTimeAlertClass(timeElapsed[order.id] || 0)}`}
-                style={{ borderWidth: '2px' }}
-              >
-                <div className="card-header d-flex justify-content-between align-items-center">
-                  <strong>{order.orderNumber}</strong>
-                  <span className="badge bg-warning">Pending</span>
-                </div>
-                
-                <div className="card-body">
-                  <div className="mb-3">
-                    <div className="d-flex justify-content-between">
-                      <span>
-                        <i className="bi bi-person me-2"></i>
-                        {order.customerName}
-                      </span>
-                      <span className="badge bg-light text-dark">
-                        {order.tableNumber}
-                      </span>
-                    </div>
-                    {order.customerPhone && (
-                      <small className="text-muted">
-                        <i className="bi bi-phone me-1"></i>
-                        {order.customerPhone}
-                      </small>
-                    )}
-                  </div>
-
-                  <div className="mb-3">
-                    <strong>Items:</strong>
-                    {order.items.map((item, index) => (
-                      <div key={index} className="d-flex justify-content-between small">
-                        <span>
-                          {item.quantity}x {item.name}
-                        </span>
-                        <span>₹{item.quantity * item.price}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {order.specialInstructions && (
-                    <div className="mb-2">
-                      <small className="text-muted">
-                        <strong>Note: </strong>
-                        {order.specialInstructions}
-                      </small>
-                    </div>
-                  )}
-
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <small className="text-muted d-block">
-                        Ordered: {new Date(order.orderTime).toLocaleTimeString()}
-                      </small>
-                      <small className={`text-${getTimeAlertClass(timeElapsed[order.id] || 0)}`}>
-                        <i className="bi bi-clock me-1"></i>
-                        {timeElapsed[order.id] || 0} min ago
-                      </small>
-                    </div>
-                    <strong className="text-primary">
-                      ₹{order.totalAmount}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="card-footer bg-transparent">
-                  <div className="btn-group w-100">
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => updateOrderStatus(order.id, 'preparing')}
-                    >
-                      Start Preparing
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to cancel this order?')) {
-                          updateOrderStatus(order.id, 'cancelled');
-                        }
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
+        {filteredOrders.map(renderOrderCard)}
       </div>
 
-      {/* Completed Orders List */}
-      {completedOrders.length > 0 && (
+      {/* Recently Served */}
+      {servedOrders.length > 0 && (
         <div className="mt-5">
-          <h4 className="mb-3">Recently Completed Orders</h4>
+          <h4 className="mb-3">Recently Served Orders</h4>
           <div className="list-group">
-            {completedOrders.slice(-5).map((order) => (
-              <div key={order.id} className="list-group-item list-group-item-success">
-                <div className="d-flex justify-content-between align-items-center">
+            {servedOrders.slice(0, 5).map((order) => (
+              <div
+                key={order._id}
+                className="list-group-item list-group-item-success"
+              >
+                <div className="d-flex justify-content-between">
                   <div>
-                    <strong>{order.orderNumber}</strong> - {order.customerName} 
-                    <small className="text-muted ms-2">({order.tableNumber})</small>
-                  </div>
-                  <div>
-                    <span className="badge bg-success me-2">Completed</span>
-                    <small className="text-muted">
-                      ₹{order.totalAmount} • {new Date(order.orderTime).toLocaleTimeString()}
+                    <strong>Order #{order._id.slice(0, 8)}</strong>
+                    <small className="text-muted ms-2">
+                      (Table {order.tableNumber})
                     </small>
                   </div>
+                  <small className="text-muted">
+                    ₹{(order.totalPrice || 0).toFixed(2)} •{" "}
+                    {order.updatedAt
+                      ? new Date(order.updatedAt).toLocaleTimeString()
+                      : "Unknown"}
+                  </small>
                 </div>
               </div>
             ))}

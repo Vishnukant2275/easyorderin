@@ -1,11 +1,13 @@
 import React from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useParams } from "react-router-dom";
 import UserFooter from "../pages/UserFooter";
 import UserHeader from "../pages/UserHeader";
-import "./User.css";
+import { CartProvider } from "../context/CartContext"; // Import the CartProvider
+import styles from "./UserLayout.module.css";
 
 const User = () => {
   const location = useLocation();
+  const { restaurantID, tableNumber } = useParams();
 
   // Hide footer on login/signup pages
   const showFooter = ![
@@ -16,13 +18,17 @@ const User = () => {
   ].includes(location.pathname);
 
   return (
-    <div className="user-layout">
-      <UserHeader />
-      <main className="user-main">
-        <Outlet />
-      </main>
-      {showFooter && <UserFooter />}
-    </div>
+    <CartProvider restaurantID={restaurantID} tableNumber={tableNumber}>
+      <div className={styles.userLayout}>
+        <UserHeader />
+        <div className="main-content">
+          <main className="user-main">
+            <Outlet />
+          </main>
+        </div>
+        {showFooter && <UserFooter />}
+      </div>
+    </CartProvider>
   );
 };
 

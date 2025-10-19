@@ -13,6 +13,7 @@ import StatusCards from "./components/StatusCards";
 
 import DashboardRouter from "./router/DashboardRouter";
 import User from "./layouts/User";
+import { ToastContainer } from "react-toastify";
 
 function App() {
   return (
@@ -27,8 +28,21 @@ function App() {
 
         {/* Separate route for dashboard - not nested under Home */}
         <Route path="/dashboard/*" element={<DashboardRouter />} />
-        <Route path="/user/*" element={<UserRouter />} />
+        <Route
+          path="/restaurant/:restaurantID/table/:tableNumber*"
+          element={<UserRouter />}
+        />
       </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored" // "light", "dark", or "colored"
+      />
     </BrowserRouter>
   );
 }
