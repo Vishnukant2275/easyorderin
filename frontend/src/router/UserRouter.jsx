@@ -3,10 +3,10 @@ import UserLogin from "../pages/UserLogin";
 import UserSignUp from "../pages/UserSignUp";
 import UserMenu from "../pages/UserMenu";
 import User from "../layouts/User";
-import UserCart from "../pages/UserCart";
+
 import UserOrders from "../pages/UserOrders";
 import UserAccount from "../pages/UserAccount";
-
+import UserCart from "../components/UserCart/UserCart";
 
 const UserRouter = () => {
   return (

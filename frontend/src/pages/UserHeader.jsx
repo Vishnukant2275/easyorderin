@@ -30,7 +30,9 @@ const UserHeader = () => {
         }
       } catch (err) {
         console.error("Error fetching restaurant:", err);
-        setError(err.response?.data?.message || "Failed to load restaurant info");
+        setError(
+          err.response?.data?.message || "Failed to load restaurant info"
+        );
       } finally {
         setLoading(false);
       }
@@ -52,28 +54,12 @@ const UserHeader = () => {
               {restaurant?.restaurantName || "Restaurant"}
             </h1>
           )}
-
-          <div className="table-info">
-            <span className="table-label">Table</span>
-            <span className="table-number glow">{tableNumber || "..."}</span>
-          </div>
         </div>
-
-        <div className="header-actions">
-          <button className="icon-btn pulse">
-            <span className="icon">🔔</span>
-            <span className="notification-badge">3</span>
-          </button>
+        <div className="table-info">
+          <span className="table-label">Table</span>
+          <span className="table-number glow">{tableNumber || "..."}</span>
         </div>
       </div>
-
-      {/* <div className="offers-banner">
-        <div className="offer-content">
-          <span className="offer-icon">🎉</span>
-          <span className="offer-text">Flat 20% off on all desserts today!</span>
-          <span className="offer-arrow">›</span>
-        </div>
-      </div> */}
     </header>
   );
 };

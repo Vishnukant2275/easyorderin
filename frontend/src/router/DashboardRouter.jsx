@@ -8,6 +8,9 @@ import Served from "../pages/Served";
 import Staff from "../pages/Staff";
 import Table from "../pages/Table";
 import Analytics from "../pages/Analytics";
+import Payment from "../pages/Payment";
+import TotalOrders from "../pages/TotalOrder";
+
 function DashboardRouter() {
   return (
     <Routes>
@@ -20,6 +23,8 @@ function DashboardRouter() {
         <Route path="tables" element={<Table />} />
         <Route path="analytics" element={<Analytics />} />
          <Route path="staff" element={<Staff />} />
+         <Route path="payment" element={<Payment />} />
+           <Route path="orders" element={<TotalOrders />} />
         {/* Add other dashboard nested routes here */}
       </Route>
     </Routes>

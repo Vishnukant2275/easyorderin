@@ -3,15 +3,19 @@ import { useUser } from "../context/UserContext";
 import api from "../services/api";
 import styles from "./UserAccount.module.css";
 import { toast } from "react-toastify";
+
 const UserAccount = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [orderHistory, setOrderHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const { user, updateUser, loginWithOtp, logout, isAuthenticated } = useUser();
 
-  // --- Login form state ---
+  // Login form state
   const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
 
@@ -44,38 +48,65 @@ const UserAccount = () => {
   }, [user]);
 
   const loadOrderHistory = async () => {
+    if (!user?._id) {
+      console.log("❌ No user ID available");
+      return;
+    }
+
     try {
-      if (user?._id) {
-        const response = await api.get(`/users/${user._id}/orders`);
-        setOrderHistory(response.data.data || []);
-      }
+      setOrdersLoading(true);
+      const response = await api.get(`/user/${user._id}/orders`);
+      console.log("📦 RAW ORDER DATA:", response.data);
+
+      // Handle different response structures
+      const orders = response.data.data || response.data.orders || [];
+      console.log("📦 Processed orders:", orders);
+
+      setOrderHistory(orders);
     } catch (error) {
-      console.error("Error loading order history:", error);
+      console.error("❌ Error loading order history:", error);
+      console.error("Error details:", error.response?.data);
+      toast.error("Failed to load order history");
+      setOrderHistory([]);
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+
+    if (!formData.phone || formData.phone.length !== 10) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+
     try {
-      setLoading(true);
+      setProfileLoading(true);
       const response = await updateUser(formData);
 
-      if (response.success) {
+      if (response?.success) {
         setEditing(false);
-      toast.success("Profile updated successfully!");
+        toast.success("Profile updated successfully!");
       } else {
-       toast.error(response.error || "Failed to update profile");
+        toast.error(response?.error || "Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile. Please try again.");
     } finally {
-      setLoading(false);
+      setProfileLoading(false);
     }
   };
 
   const handleReorder = async (orderId) => {
     try {
+      setLoading(true);
       const orderResponse = await api.get(`/orders/${orderId}`);
       const order = orderResponse.data.data;
 
@@ -93,12 +124,15 @@ const UserAccount = () => {
 
       if (response.data.success) {
         toast.success("Order placed successfully!");
-        // Reload order history to show the new order
         loadOrderHistory();
+      } else {
+        toast.error("Failed to place order");
       }
     } catch (error) {
       console.error("Error reordering:", error);
-      toast.errorr("Failed to place order. Please try again.");
+      toast.error("Failed to place order. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,26 +144,32 @@ const UserAccount = () => {
           [settingId]: enabled,
         },
       });
-      alert(`Setting ${enabled ? 'enabled' : 'disabled'} successfully!`);
+      toast.success(`Setting ${enabled ? "enabled" : "disabled"} successfully!`);
     } catch (error) {
       console.error("Error updating setting:", error);
-      alert("Failed to update setting. Please try again.");
+      toast.error("Failed to update setting. Please try again.");
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
-      logout();
-      alert("Logged out successfully!");
+      try {
+        await api.post("/auth/logout");
+        logout();
+        toast.success("Logged out successfully!");
+      } catch (error) {
+        console.error("Logout error:", error);
+        logout();
+        toast.success("Logged out successfully!");
+      }
     }
   };
 
   const getOrderStatusBadge = (status) => {
     const statusConfig = {
       pending: { class: styles.statusPending, text: "Pending" },
-      confirmed: { class: styles.statusConfirmed, text: "Confirmed" },
       preparing: { class: styles.statusPreparing, text: "Preparing" },
-      ready: { class: styles.statusReady, text: "Ready" },
+      served: { class: styles.statusCompleted, text: "Completed" },
       completed: { class: styles.statusCompleted, text: "Completed" },
       cancelled: { class: styles.statusCancelled, text: "Cancelled" },
     };
@@ -142,42 +182,35 @@ const UserAccount = () => {
     );
   };
 
-  // --- LOGIN HANDLERS ---
+  // Login Handlers
   const handleSendOtp = async () => {
+    
+
     if (!phone.match(/^[6-9]\d{9}$/)) {
-     toast.info("Please enter a valid 10-digit phone number");
+      toast.error("Please enter a valid 10-digit phone number");
       return;
     }
 
     try {
       setLoading(true);
-      const response = await api.post("/auth/send-otp", { phone });
+      const response = await api.post("/auth/send-otp", { phone, name });
 
       if (response.data.success) {
         setOtpSent(true);
-       toast.success("OTP sent successfully!");
+        toast.success("OTP sent successfully!");
         console.log("Debug OTP:", response.data.debugOtp); // Remove in production
       } else {
         toast.error(response.data.message || "Failed to send OTP");
       }
     } catch (error) {
       console.error("Error sending OTP:", error);
-      if (error.response?.data?.message) {
-       toast.error(error.response.data.message);
-      } else {
-        toast.error("Error sending OTP. Please try again.");
-      }
+      toast.error(error.response?.data?.message || "Error sending OTP. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp) {
-      toast.warn("Please enter the OTP");
-      return;
-    }
-
     if (!otp.match(/^\d{6}$/)) {
       toast.error("Please enter a valid 6-digit OTP");
       return;
@@ -185,108 +218,124 @@ const UserAccount = () => {
 
     try {
       setLoading(true);
-      const response = await api.post("/auth/verify-otp", { phone, otp });
+      const response = await api.post("/auth/verify-otp", { phone, otp, name });
 
-      if (response.data.success) {
-        // Store token and user data
-        localStorage.setItem("userToken", response.data.token);
-        localStorage.setItem("userData", JSON.stringify(response.data.user));
+    if (response.data.success) {
+  // Store token and user data
+  localStorage.setItem("userToken", response.data.token);
+  localStorage.setItem("userData", JSON.stringify(response.data.user));
 
-        // Update context using loginWithOtp
-        if (loginWithOtp) {
-          await loginWithOtp(response.data.user, response.data.token);
-        }
+  // Update context
+  if (loginWithOtp) {
+    await loginWithOtp(response.data.user, response.data.token);
+  }
 
-       toast.success("Login successful!");
-        // Reset form
-        setPhone("");
-        setOtp("");
-        setOtpSent(false);
-      } else {
-        toast.warn(response.data.message || "Invalid OTP");
+  toast.success("Login successful!");
+  
+  // Reset form
+  setName("");
+  setPhone("");
+  setOtp("");
+  setOtpSent(false);
+  
+  // Refresh the page after a short delay to ensure context is updated
+  setTimeout(() => {
+    window.location.reload();
+  }, 100);
+} else {
+        toast.error(response.data.message || "Invalid OTP");
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        alert("Verification failed. Please try again.");
-      }
+      toast.error(error.response?.data?.message || "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- LOGIN VIEW ---
+  // Login View
   if (!isAuthenticated || !user) {
     return (
-      <div className={styles.loginContainer}>
-        <h2>Login to Your Account</h2>
+      <div className={styles.container}>
+        <div className={styles.loginContainer}>
+          <h2>Login to Your Account</h2>
 
-        <div className={styles.loginForm}>
-          <div className={styles.formGroup}>
-            <label>Mobile Number</label>
-            <input
-              type="tel"
-              placeholder="Enter 10-digit number"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-              maxLength="10"
-              disabled={otpSent || loading}
-            />
-          </div>
-
-          {otpSent && (
+          <div className={styles.loginForm}>
             <div className={styles.formGroup}>
-              <label>Enter OTP</label>
+              <label>Name(Optional)</label>
               <input
                 type="text"
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                maxLength="6"
-                disabled={loading}
+                placeholder="Enter Your Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={loading || otpSent}
               />
-              <div className={styles.otpHint}>OTP sent to +91 {phone}</div>
             </div>
-          )}
+            
+            <div className={styles.formGroup}>
+              <label>Mobile Number*</label>
+              <input
+                type="tel"
+                placeholder="Enter 10-digit number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                maxLength="10"
+                disabled={otpSent || loading}
+              />
+            </div>
 
-          <button
-            onClick={otpSent ? handleVerifyOtp : handleSendOtp}
-            disabled={loading}
-            className={styles.otpButton}
-          >
-            {loading ? (
-              <div className={styles.loadingSpinner}></div>
-            ) : otpSent ? (
-              "Verify OTP"
-            ) : (
-              "Send OTP"
+            {otpSent && (
+              <div className={styles.formGroup}>
+                <label>Enter OTP</label>
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  maxLength="6"
+                  disabled={loading}
+                />
+                <div className={styles.otpHint}>OTP sent to +91 {phone}</div>
+              </div>
             )}
-          </button>
 
-          {otpSent && (
             <button
-              type="button"
-              onClick={() => {
-                setOtpSent(false);
-                setOtp("");
-              }}
-              className={styles.changeNumberButton}
+              onClick={otpSent ? handleVerifyOtp : handleSendOtp}
               disabled={loading}
+              className={styles.otpButton}
             >
-              Change Phone Number
+              {loading ? (
+                <div className={styles.loadingSpinner}></div>
+              ) : otpSent ? (
+                "Verify OTP"
+              ) : (
+                "Send OTP"
+              )}
             </button>
-          )}
+
+            {otpSent && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOtpSent(false);
+                  setOtp("");
+                }}
+                className={styles.changeNumberButton}
+                disabled={loading}
+              >
+                Change Phone Number
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
-  // --- USER ACCOUNT VIEW ---
+  // User Account View
   const userData = {
     name: user.name,
-    email: user.email || "Not provided",
+    email: user.email || "Email Not Available",
     phone: user.phone,
     joinDate: new Date(user.createdAt || Date.now()).toLocaleDateString("en-US", {
       year: "numeric",
@@ -351,7 +400,7 @@ const UserAccount = () => {
               <div className={styles.sectionHeader}>
                 <h2>Personal Information</h2>
                 {!editing && (
-                  <button 
+                  <button
                     onClick={() => setEditing(true)}
                     className={styles.editButton}
                   >
@@ -363,7 +412,7 @@ const UserAccount = () => {
               {editing ? (
                 <form onSubmit={handleUpdateProfile}>
                   <div className={styles.formGroup}>
-                    <label>Full Name</label>
+                    <label>Full Name *</label>
                     <input
                       type="text"
                       value={formData.name}
@@ -371,7 +420,7 @@ const UserAccount = () => {
                         setFormData({ ...formData, name: e.target.value })
                       }
                       required
-                      disabled={loading}
+                      disabled={profileLoading}
                     />
                   </div>
                   <div className={styles.formGroup}>
@@ -382,33 +431,29 @@ const UserAccount = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
-                      disabled={loading}
+                      disabled={profileLoading}
                     />
                   </div>
-                  <div className={styles.formGroup}>
-                    <label>Phone</label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      required
-                      disabled={loading}
-                    />
-                  </div>
+                 
                   <div className={styles.formActions}>
-                    <button 
-                      type="submit" 
-                      disabled={loading}
+                    <button
+                      type="submit"
+                      disabled={profileLoading}
                       className={styles.saveButton}
                     >
-                      {loading ? "Saving..." : "Save Changes"}
+                      {profileLoading ? "Saving..." : "Save Changes"}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setEditing(false)}
-                      disabled={loading}
+                      onClick={() => {
+                        setEditing(false);
+                        setFormData({
+                          name: user.name || "",
+                          email: user.email || "",
+                          phone: user.phone || "",
+                        });
+                      }}
+                      disabled={profileLoading}
                       className={styles.cancelButton}
                     >
                       Cancel
@@ -452,9 +497,23 @@ const UserAccount = () => {
 
         {activeTab === "orders" && (
           <div className={styles.tabContent}>
-            <h2>Order History</h2>
+            <div className={styles.sectionHeader}>
+              <h2>Order History</h2>
+              <button 
+                onClick={loadOrderHistory} 
+                className={styles.refreshButton}
+                disabled={ordersLoading}
+              >
+                {ordersLoading ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
 
-            {orderHistory.length === 0 ? (
+            {ordersLoading ? (
+              <div className={styles.loadingState}>
+                <div className={styles.loadingSpinner}></div>
+                <p>Loading orders...</p>
+              </div>
+            ) : orderHistory.length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>📦</div>
                 <h3>No Orders Yet</h3>
@@ -467,47 +526,55 @@ const UserAccount = () => {
                   <div key={order._id} className={styles.orderCard}>
                     <div className={styles.orderHeader}>
                       <div>
-                        <h4>Order #{order.orderNumber || order._id.slice(-6)}</h4>
+                        <h4>
+                          Order #
+                          {order.orderNumber ||
+                            order._id?.slice(-6).toUpperCase() ||
+                            "N/A"}
+                        </h4>
                         <span className={styles.orderDate}>
-                          {new Date(order.createdAt).toLocaleDateString()}
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleDateString()
+                            : "Date not available"}
                         </span>
                       </div>
                       {getOrderStatusBadge(order.status)}
                     </div>
 
+                    {order.restaurant && (
+                      <div className={styles.restaurantInfo}>
+                        <span className={styles.restaurantIcon}>🏪</span>
+                        <span className={styles.restaurantName}>
+                          {order.restaurant.name ||
+                            order.restaurant.restaurantName ||
+                            "Restaurant"}
+                        </span>
+                      </div>
+                    )}
+
                     <div className={styles.orderDetails}>
                       <span>
-                        {order.items?.reduce(
+                        {order.menuItems?.reduce(
                           (total, item) => total + (item.quantity || 0),
                           0
                         ) || 0}{" "}
                         items
                       </span>
-                      <span>₹{order.totalAmount || 0}</span>
+                      <span>₹{order.totalPrice || order.totalAmount || 0}</span>
                     </div>
 
-                    {order.items?.slice(0, 2).map((item, index) => (
+                    {order.menuItems?.slice(0, 2).map((item, index) => (
                       <div key={index} className={styles.orderItemPreview}>
-                        {item.quantity}x {item.menuItem?.name || item.name || "Item"}
+                        {item.quantity}x {item.name || "Unknown Item"} - ₹{item.price || 0}
                       </div>
                     ))}
-                    {order.items?.length > 2 && (
+                    {order.menuItems && order.menuItems.length > 2 && (
                       <div className={styles.moreItems}>
-                        +{order.items.length - 2} more items
+                        +{order.menuItems.length - 2} more items
                       </div>
                     )}
 
-                    <div className={styles.orderActions}>
-                      <button className={styles.viewButton}>View Details</button>
-                      {order.status === "completed" && (
-                        <button 
-                          onClick={() => handleReorder(order._id)}
-                          className={styles.reorderButton}
-                        >
-                          Reorder
-                        </button>
-                      )}
-                    </div>
+                    
                   </div>
                 ))}
               </div>
@@ -544,10 +611,7 @@ const UserAccount = () => {
             </div>
 
             <div className={styles.logoutSection}>
-              <button 
-                onClick={handleLogout}
-                className={styles.logoutButton}
-              >
+              <button onClick={handleLogout} className={styles.logoutButton}>
                 🚪 Log Out
               </button>
             </div>

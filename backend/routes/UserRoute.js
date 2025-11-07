@@ -1,5 +1,4 @@
 const express = require("express");
-const otpModel = require("../models/otp");
 const Restaurant = require("../models/restaurant");
 const Tables = require("../models/Tables");
 const Menu = require("../models/Menu");
@@ -28,94 +27,7 @@ router.get("/", async (req, res) => {
     });
   }
 });
-// Send OTP route
-router.get("/send-otp", async (req, res) => {
-  try {
-    const { phone } = req.query;
 
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: "Phone number is required",
-      });
-    }
-
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // In production, you would send this OTP via SMS service
-    console.log(`OTP for ${phone}: ${otp}`);
-
-    // Store OTP in database or session (you'll need to implement this)
-    // await OTPModel.create({ phone, otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000) });
-
-    res.json({
-      success: true,
-      message: "OTP sent successfully",
-      // Don't send OTP in production response
-      debugOtp: otp, // Remove this in production
-    });
-  } catch (error) {
-    console.error("Error sending OTP:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to send OTP",
-    });
-  }
-});
-
-// Verify OTP route
-router.post("/verify-otp", async (req, res) => {
-  try {
-    const { phone, otp } = req.body;
-
-    if (!phone || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Phone and OTP are required",
-      });
-    }
-
-    // Verify OTP from database (you'll need to implement this)
-    // const otpRecord = await OTPModel.findOne({
-    //   phone,
-    //   otp,
-    //   expiresAt: { $gt: new Date() }
-    // });
-
-    // For demo purposes, accept any 6-digit OTP
-    if (otp.length === 6 && /^\d+$/.test(otp)) {
-      let user = await User.findOne({ phone });
-      if (!user) {
-        user = new User({
-          phone,
-          name: `Customer${phone.slice(-4)}`,
-        });
-        await user.save();
-      }
-      req.session.user = {
-        id: user._id,
-        phone: user.phone,
-        name: user.name,
-      };
-      res.json({
-        success: true,
-        message: "OTP verified successfully",
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: "Invalid OTP",
-      });
-    }
-  } catch (error) {
-    console.error("Error verifying OTP:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to verify OTP",
-    });
-  }
-});
 // GET /api/users/:userId - Get user by ID
 router.get("/:userId", async (req, res) => {
   try {
@@ -125,7 +37,7 @@ router.get("/:userId", async (req, res) => {
       .populate({
         path: "orderHistory",
         populate: {
-          path: "items.menuItem",
+          path: "menuItems.menuId",
           model: "Menu",
         },
       });
@@ -319,13 +231,39 @@ router.get("/phone/:phone", async (req, res) => {
 // POST /api/users/:userId/orders - Add order to user's history
 router.post("/:userId/orders", async (req, res) => {
   try {
-    const { orderId } = req.body;
+    const { 
+      restaurantId, 
+      tableNumber, 
+      menuItems, 
+      totalPrice,
+      specialInstructions,
+      paymentMethod 
+    } = req.body;
 
-    if (!orderId) {
+    // Validate required fields
+    if (!restaurantId || !tableNumber || !menuItems || !totalPrice) {
       return res.status(400).json({
         success: false,
-        error: "Order ID is required",
+        error: "restaurantId, tableNumber, menuItems, and totalPrice are required",
       });
+    }
+
+    // Validate menuItems structure
+    if (!Array.isArray(menuItems) || menuItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "menuItems must be a non-empty array",
+      });
+    }
+
+    // Validate each menu item has required fields
+    for (const item of menuItems) {
+      if (!item.name || !item.price || !item.quantity) {
+        return res.status(400).json({
+          success: false,
+          error: "Each menu item must have name, price, and quantity",
+        });
+      }
     }
 
     const user = await User.findById(req.params.userId);
@@ -336,73 +274,261 @@ router.post("/:userId/orders", async (req, res) => {
       });
     }
 
-    // Add to order history and set as current order
-    user.orderHistory.push(orderId);
-    user.currentOrder = orderId;
+    // Create new order with direct menu item data
+    const newOrder = new Order({
+      restaurantId,
+      userId: user._id,
+      tableNumber,
+      menuItems: menuItems.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        notes: item.notes || "",
+        menuId: item.menuId // Optional: keep reference if available
+      })),
+      totalPrice,
+      specialInstructions: specialInstructions || "",
+      paymentMethod: paymentMethod || "counter",
+      status: "pending"
+    });
 
+    const savedOrder = await newOrder.save();
+
+    // Add to user's order history
+    user.orderHistory.push(savedOrder._id);
+    user.currentOrder = savedOrder._id;
     await user.save();
 
-    // Populate the updated user data
-    const updatedUser = await User.findById(req.params.userId)
-      .populate("currentOrder")
-      .populate("orderHistory");
-
-    res.json({
+    res.status(201).json({
       success: true,
-      message: "Order added to user history",
-      data: updatedUser,
+      message: "Order created successfully",
+      data: savedOrder,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error creating order:", error);
     if (error.kind === "ObjectId") {
       return res.status(400).json({
         success: false,
-        error: "Invalid user ID or order ID format",
+        error: "Invalid user ID or restaurant ID format",
       });
     }
     res.status(500).json({
       success: false,
-      error: "Server error while adding order to user",
+      error: "Server error while creating order",
     });
   }
 });
 
-// GET /api/users/:userId/orders - Get user's order history
+// GET /api/users/:userId/orders - Get user's order history (FIXED VERSION)
 router.get("/:userId/orders", async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId)
-      .populate({
-        path: "orderHistory",
-        populate: {
-          path: "items.menuItem",
-          model: "Menu",
-        },
-      })
-      .select("orderHistory");
+    const { userId } = req.params;
+    const { 
+      status, 
+      page = 1, 
+      limit = 20,
+      startDate,
+      endDate 
+    } = req.query;
 
+    // Validate user ID
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: "User ID is required"
+      });
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: "User not found",
+        error: "User not found"
       });
     }
 
+    // Build query - simplified since we now have direct data
+    let query = { userId: userId };
+
+    // Add status filter if provided
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // Calculate pagination
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get orders - no need to populate menuItems.menuId anymore!
+    const orders = await Order.find(query)
+      .populate("restaurantId", "restaurantName address phoneNumber")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    // Get total count for pagination
+    const totalOrders = await Order.countDocuments(query);
+
+    // Format the orders for frontend - much simpler now!
+    const formattedOrders = orders.map(order => ({
+      _id: order._id,
+      status: order.status,
+      totalPrice: order.totalPrice,
+      tableNumber: order.tableNumber,
+      specialInstructions: order.specialInstructions,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.isPaid ? "paid" : "pending",
+      menuItems: order.menuItems.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        notes: item.notes
+        // No need for menuId population anymore!
+      })),
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      restaurant: order.restaurantId ? {
+        _id: order.restaurantId._id,
+        name: order.restaurantId.restaurantName,
+        address: order.restaurantId.address,
+        phone: order.restaurantId.phoneNumber
+      } : null
+    }));
+
     res.json({
       success: true,
-      count: user.orderHistory.length,
-      data: user.orderHistory,
+      data: formattedOrders,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalOrders / limitNum),
+        totalOrders,
+        hasNext: pageNum < Math.ceil(totalOrders / limitNum),
+        hasPrev: pageNum > 1
+      },
+      user: {
+        _id: user._id,
+        name: user.name,
+        phone: user.phone
+      }
     });
+
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching user orders:", error);
+    
     if (error.kind === "ObjectId") {
       return res.status(400).json({
         success: false,
-        error: "Invalid user ID format",
+        error: "Invalid user ID format"
       });
     }
+
     res.status(500).json({
       success: false,
-      error: "Server error while fetching user orders",
+      error: "Server error while fetching user orders"
+    });
+  }
+});
+
+// Alternative route using session (for logged-in users)
+router.get("/orders/my-orders", async (req, res) => {
+  try {
+    // Check if user is authenticated via session
+    if (!req.session.user) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated"
+      });
+    }
+
+    const userId = req.session.user.id;
+    const { status, page = 1, limit = 20 } = req.query;
+
+    // Build query
+    let query = { 
+      $or: [
+        { userId: userId },
+        { customerPhone: req.session.user.phone }
+      ]
+    };
+
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const orders = await Order.find(query)
+      .populate("restaurantId", "restaurantName address phoneNumber")
+      .populate("menuItems.menuId", "name price category isVegetarian")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    const totalOrders = await Order.countDocuments(query);
+
+    const formattedOrders = orders.map(order => ({
+      _id: order._id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      totalPrice: order.totalPrice,
+      total: order.total,
+      tableNumber: order.tableNumber,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      specialInstructions: order.specialInstructions,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      menuItems: order.menuItems.map(item => ({
+        menuId: item.menuId?._id,
+        name: item.menuId?.name || "Unknown Item",
+        price: item.menuId?.price || 0,
+        quantity: item.quantity,
+        notes: item.notes
+      })),
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      estimatedPreparationTime: order.estimatedPreparationTime,
+      completedAt: order.completedAt,
+      cancelledAt: order.cancelledAt,
+      restaurant: order.restaurantId ? {
+        name: order.restaurantId.restaurantName,
+        address: order.restaurantId.address,
+        phone: order.restaurantId.phoneNumber
+      } : null
+    }));
+
+    res.json({
+      success: true,
+      data: formattedOrders,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalOrders / limitNum),
+        totalOrders,
+        hasNext: pageNum < Math.ceil(totalOrders / limitNum),
+        hasPrev: pageNum > 1
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching user orders:", error);
+    res.status(500).json({
+      success: false,
+      error: "Server error while fetching user orders"
     });
   }
 });

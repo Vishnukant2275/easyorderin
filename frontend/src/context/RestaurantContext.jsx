@@ -8,7 +8,9 @@ export const RestaurantProvider = ({ children }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [orders, setOrders] = useState([]);
   const [table, setTable] = useState([]);
-
+  const [paymentQRCodes, setPaymentQRCodes] = useState([]);
+  const [loadingQRCodes, setLoadingQRCodes] = useState(false);
+  const [qrError, setQRError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -30,7 +32,7 @@ export const RestaurantProvider = ({ children }) => {
 
     fetchRestaurant();
   }, [refreshTrigger]);
-//fetching menu
+  //fetching menu
   useEffect(() => {
     const fetchMenu = async () => {
       try {
@@ -53,7 +55,7 @@ export const RestaurantProvider = ({ children }) => {
 
     fetchMenu();
   }, [refreshTrigger]);
-//fetching table data
+  //fetching table data
   useEffect(() => {
     const getTables = async () => {
       try {
@@ -73,9 +75,20 @@ export const RestaurantProvider = ({ children }) => {
       try {
         setLoading(true);
         const res = await api.get("/restaurant/orders");
-        if (res.data.success && Array.isArray(res.data.orders)) {
+        if (res.data.success && Array.isArray(res.data.orders))  {
           setOrders(res.data.orders);
-          console.log("Orders:" , res.data.orders)
+          console.log("Orders with user data:", res.data.orders);
+
+          // Log user data to verify it's populated
+          res.data.orders.forEach((order) => {
+            console.log(`Order ${order._id}:`, {
+              userName: order.userId?.name,
+              userPhone: order.userId?.phone,
+              formattedOrderNumber:
+                order.formattedOrderNumber ||
+                `ORD-${order.orderNumber?.toString().padStart(3, "0")}`,
+            });
+          });
         } else {
           setOrders([]);
         }
@@ -88,6 +101,39 @@ export const RestaurantProvider = ({ children }) => {
     };
 
     fetchOrders();
+  }, [refreshTrigger]);
+  
+//fetching payment methods
+ useEffect(() => {
+    const fetchPaymentQRCodes = async () => {
+      try {
+        setLoadingQRCodes(true);
+        setQRError("");
+
+        const res = await api.get("/restaurant/get-paymentqr", {
+          withCredentials: true,
+        });
+
+        console.log("QR Codes API Response:", res.data);
+
+        if (res.data?.success && Array.isArray(res.data.qrCodes)) {
+          setPaymentQRCodes(res.data.qrCodes);
+        } else {
+          setPaymentQRCodes([]);
+          setQRError(res.data?.error || "No QR codes found");
+        }
+      } catch (error) {
+        console.error("Error fetching QR codes:", error);
+        setPaymentQRCodes([]);
+        setQRError(
+          error.response?.data?.error || "Failed to fetch QR codes from server"
+        );
+      } finally {
+        setLoadingQRCodes(false);
+      }
+    };
+
+    fetchPaymentQRCodes();
   }, []);
 
 
@@ -100,7 +146,9 @@ export const RestaurantProvider = ({ children }) => {
         setRestaurant,
         menuItems,
         setMenuItems,
-
+        paymentQRCodes,
+        setPaymentQRCodes,
+        loadingQRCodes,
         orders,
         setOrders,
         table,

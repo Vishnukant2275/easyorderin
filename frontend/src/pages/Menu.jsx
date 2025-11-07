@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext } from "react";
-
 import api from "../services/api";
 import { useRestaurant } from "../context/RestaurantContext";
 import { toast } from "react-toastify";
@@ -7,13 +6,12 @@ import { toast } from "react-toastify";
 const foodCategories = ["starter", "main", "dessert", "beverage", "side"];
 
 const Menu = () => {
-  // const [menuItems, setMenuItems] = useState([]);
-
   const { menuItems, setMenuItems, setRefreshTrigger } = useRestaurant();
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterVegetarian, setFilterVegetarian] = useState("All");
+  const [viewMode, setViewMode] = useState("mobile"); // 'mobile' or 'desktop'
 
   const [formData, setFormData] = useState({
     name: "",
@@ -187,9 +185,32 @@ const Menu = () => {
         <div className="col-md-8 p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h2>Menu Items</h2>
-            <span className="badge bg-primary">
-              {/* {filteredMenuItems.length} items */}
-            </span>
+            <div className="d-flex align-items-center gap-3">
+              {/* View Mode Toggle */}
+              <div className="view-mode-toggle">
+                <button
+                  className={`toggle-btn ${
+                    viewMode === "mobile" ? "active" : ""
+                  }`}
+                  onClick={() => setViewMode("mobile")}
+                  title="Mobile View"
+                >
+                  📱
+                </button>
+                <button
+                  className={`toggle-btn ${
+                    viewMode === "desktop" ? "active" : ""
+                  }`}
+                  onClick={() => setViewMode("desktop")}
+                  title="Desktop View"
+                >
+                  💻
+                </button>
+              </div>
+              <span className="badge bg-primary">
+                {filteredMenuItems.length} items
+              </span>
+            </div>
           </div>
 
           {/* Search and Filters */}
@@ -231,88 +252,158 @@ const Menu = () => {
           </div>
 
           {/* Menu Table */}
-          <div className="table-responsive">
-            <table className="table table-striped table-hover">
-              <thead className="table-dark">
-                <tr>
-                  <th>Name</th>
-                  <th>Price</th>
-                  <th>Category</th>
-                  <th>Type</th>
-                  <th>Availability</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMenuItems.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="text-center text-muted py-4">
-                      No menu items found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredMenuItems.map((item) => (
-                    <tr
-                      key={item._id}
-                      className={!item.isAvailable ? "table-secondary" : ""}
-                    >
-                      <td>
-                        <div>
-                          <strong>{item.name}</strong>
-                          {item.description && (
-                            <small className="d-block text-muted">
-                              {item.description}
-                            </small>
-                          )}
-                        </div>
-                      </td>
-                      <td>₹{item.price}</td>
-                      <td>
-                        <span className="badge bg-info">
-                          {item.foodCategory}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            item.isVegetarian ? "bg-success" : "bg-danger"
+          {/* Menu Table */}
+          <div className="menu-table-wrapper">
+            {/* Desktop Table - Show when viewMode is desktop OR on large screens */}
+            {viewMode === "desktop" ? (
+              <div>
+                <table className="table table-striped table-hover">
+                  <thead className="table-dark">
+                    <tr>
+                      <th>Name</th>
+                      <th>Price</th>
+                      <th>Category</th>
+                      <th>Type</th>
+                      <th>Availability</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredMenuItems.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="text-center text-muted py-4">
+                          No menu items found
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredMenuItems.map((item) => (
+                        <tr
+                          key={item._id}
+                          className={!item.isAvailable ? "table-secondary" : ""}
+                        >
+                          <td>
+                            <strong>{item.name}</strong>
+                            {item.description && (
+                              <small className="d-block text-muted">
+                                {item.description}
+                              </small>
+                            )}
+                          </td>
+                          <td>₹{item.price}</td>
+                          <td>
+                            <span className="badge bg-info">
+                              {item.foodCategory}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className={`badge ${
+                                item.isVegetarian ? "bg-success" : "bg-danger"
+                              }`}
+                            >
+                              {item.isVegetarian ? "Vegetarian" : "Non-Veg"}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="form-check form-switch">
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                checked={item.isAvailable}
+                                onChange={() => toggleAvailability(item._id)}
+                              />
+                              <label className="form-check-label small">
+                                {item.isAvailable ? "Available" : "Unavailable"}
+                              </label>
+                            </div>
+                          </td>
+                          <td>
+                            <button
+                              className="btn btn-sm btn-outline-warning me-2"
+                              onClick={() => handleEdit(item)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleDelete(item._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              /* Mobile Cards - Show when viewMode is mobile */
+              <div className="mobile-menu-list">
+                {filteredMenuItems.map((item) => (
+                  <div key={item._id} className="mobile-menu-card">
+                    {/* Header with name, price, and veg/non-veg indicator */}
+                    <div className="menu-card-header">
+                      <div className="menu-title-section">
+                        <h6 className="menu-item-name">{item.name}</h6>
+                        {item.description && (
+                          <p className="menu-item-desc">{item.description}</p>
+                        )}
+                      </div>
+                      <div className="menu-price-section">
+                        <span className="menu-price">₹{item.price}</span>
+                        <div
+                          className={`veg-indicator ${
+                            item.isVegetarian ? "veg" : "non-veg"
                           }`}
                         >
-                          {item.isVegetarian ? "Vegetarian" : "Non-Veg"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="form-check form-switch">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            checked={item.isAvailable}
-                            onChange={() => toggleAvailability(item._id)}
-                          />
-                          <label className="form-check-label small">
-                            {item.isAvailable ? "Available" : "Unavailable"}
-                          </label>
+                          {item.isVegetarian ? "Veg🟢" : "Non-Veg🔴"}
                         </div>
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-sm btn-outline-warning me-2"
-                          onClick={() => handleEdit(item)}
+                      </div>
+                    </div>
+
+                    {/* Category and status */}
+                    <div className="menu-card-meta">
+                      <span className="category-badge">
+                        {item.foodCategory}
+                      </span>
+                      {/* Availability Toggle */}
+                      <div className="availability-toggle">
+                        <div
+                          className={`toggle-switch ${
+                            item.isAvailable ? "available" : "unavailable"
+                          }`}
+                          onClick={() => toggleAvailability(item._id)}
                         >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDelete(item._id)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                          <div className="toggle-slider"></div>
+                          <span className="toggle-text">
+                            {item.isAvailable ? "Available" : "Unavailable"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="menu-card-actions">
+                      <button
+                        className="btn-edit"
+                        onClick={() => handleEdit(item)}
+                      >
+                        <span>✏️</span>
+                        Edit
+                      </button>
+                      <button
+                        className="btn-delete"
+                        onClick={() => handleDelete(item._id)}
+                      >
+                        <span>🗑️</span>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -447,6 +538,270 @@ const Menu = () => {
           </form>
         </div>
       </div>
+
+      {/* View Mode Toggle Styles */}
+      <style jsx>{`
+        .view-mode-toggle {
+          display: flex;
+          background: #f8f9fa;
+          border-radius: 12px;
+          padding: 0.25rem;
+          border: 1px solid #dee2e6;
+        }
+
+        .toggle-btn {
+          background: transparent;
+          border: none;
+          padding: 0.5rem 0.75rem;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 1.1rem;
+          transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+          background: #007bff;
+          color: white;
+        }
+
+        .toggle-btn:hover:not(.active) {
+          background: #e9ecef;
+        }
+
+        /* Mobile Card Styles */
+        .mobile-menu-list {
+          padding: 0.5rem;
+        }
+
+        .mobile-menu-card {
+          background: #fff;
+          border-radius: 16px;
+          padding: 1rem;
+          margin-bottom: 1rem;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+          border: 1px solid #f0f0f0;
+          transition: all 0.2s ease;
+        }
+
+        .mobile-menu-card:active {
+          transform: scale(0.98);
+        }
+
+        .menu-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 0.75rem;
+        }
+
+        .menu-title-section {
+          flex: 1;
+          margin-right: 0.5rem;
+        }
+
+        .menu-item-name {
+          font-size: 1rem;
+          font-weight: 600;
+          color: #2d3748;
+          margin: 0 0 0.25rem 0;
+          line-height: 1.3;
+        }
+
+        .menu-item-desc {
+          font-size: 0.8rem;
+          color: #718096;
+          margin: 0;
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .menu-price-section {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 0.25rem;
+        }
+
+        .menu-price {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #2d3748;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .veg-indicator {
+          font-size: 0.7rem;
+          padding: 0.1rem 0.4rem;
+          border-radius: 8px;
+          background: #e5e9ec;
+        }
+
+        .menu-card-meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+          padding: 0.5rem 0;
+          border-top: 1px solid #f7fafc;
+          border-bottom: 1px solid #f7fafc;
+        }
+
+        .category-badge {
+          background: #ebf8ff;
+          color: #3182ce;
+          padding: 0.3rem 0.8rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 500;
+        }
+
+        .availability-toggle {
+          display: flex;
+          align-items: center;
+        }
+
+        .toggle-switch {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.5rem 0.65rem;
+          border-radius: 25px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border: 2px solid transparent;
+          min-width: 100px;
+          margin-bottom: 5px;
+          justify-content: space-between;
+        }
+
+        .toggle-switch.available {
+          background: #dcfce7;
+          border-color: #22c55e;
+        }
+
+        .toggle-switch.unavailable {
+          background: #fee2e2;
+          border-color: #ef4444;
+        }
+
+        .toggle-slider {
+          width: 40px;
+          height: 20px;
+          background: #fff;
+          border-radius: 20px;
+          position: relative;
+          transition: all 0.3s ease;
+          border: 1px solid #d1d5db;
+        }
+
+        .toggle-slider::before {
+          content: "";
+          position: absolute;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          top: 1px;
+          left: 2px;
+          transition: all 0.3s ease;
+          background: #6b7280;
+        }
+
+        .toggle-switch.available .toggle-slider::before {
+          transform: translateX(20px);
+          background: #22c55e;
+        }
+
+        .toggle-switch.unavailable .toggle-slider::before {
+          transform: translateX(0);
+          background: #ef4444;
+        }
+
+        .toggle-text {
+          font-size: 0.7rem;
+          font-weight: 600;
+          min-width: 58px;
+        }
+
+        .toggle-switch.available .toggle-text {
+          color: #166534;
+        }
+
+        .toggle-switch.unavailable .toggle-text {
+          color: #991b1b;
+        }
+
+        .toggle-switch:active {
+          transform: scale(0.95);
+        }
+
+        .menu-card-actions {
+          display: flex;
+          gap: 0.75rem;
+        }
+
+        .btn-edit,
+        .btn-delete {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          border: none;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .btn-edit {
+          background: #fff7ed;
+          color: #ed8936;
+          border: 1px solid #fed7aa;
+        }
+
+        .btn-edit:active {
+          background: #feebc8;
+          transform: scale(0.95);
+        }
+
+        .btn-delete {
+          background: #fed7d7;
+          color: #e53e3e;
+          border: 1px solid #feb2b2;
+        }
+
+        .btn-delete:active {
+          background: #feb2b2;
+          transform: scale(0.95);
+        }
+
+        @media (max-width: 360px) {
+          .menu-card-header {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+
+          .menu-price-section {
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            justify-content: space-between;
+          }
+
+          .menu-card-actions {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

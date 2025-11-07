@@ -17,7 +17,7 @@ export const UserProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState(null);
 
-  // Check if user is logged in on component mount
+  // Check authentication status on component mount
   useEffect(() => {
     checkAuthStatus();
   }, []);
@@ -25,82 +25,76 @@ export const UserProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       setError(null);
-      const token = localStorage.getItem('userToken');
-      const storedUser = localStorage.getItem('userData');
+      setLoading(true);
       
-      if (token && storedUser) {
-        // Set user immediately from localStorage for better UX
-        setUser(JSON.parse(storedUser));
+      const response = await api.get('/auth/check-auth', {
+        withCredentials: true // Important for session cookies
+      });
+      
+      if (response.data.authenticated) {
+        setUser(response.data.user);
         setIsAuthenticated(true);
         
-        // Then verify with backend
+        // Optionally fetch full user profile
         try {
-          const response = await api.get('/users/me');
-          if (response.data.success) {
-            setUser(response.data.data);
-            localStorage.setItem('userData', JSON.stringify(response.data.data));
+          const profileResponse = await api.get('/auth/me', {
+            withCredentials: true
+          });
+          if (profileResponse.data.success) {
+            setUser(profileResponse.data.data);
           }
-        } catch (verifyError) {
-          console.warn('Token verification failed:', verifyError);
-          // Keep user logged in with stored data
+        } catch (profileError) {
+          console.warn('Failed to fetch full profile:', profileError);
+          // Continue with basic user data from check-auth
         }
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      handleLogout();
+      setUser(null);
+      setIsAuthenticated(false);
+      // Don't set error here as it might be normal for non-authenticated users
     } finally {
       setLoading(false);
     }
   };
 
-  // OTP-based login method
-  const loginWithOtp = async (userData, token) => {
+  // Send OTP
+  const sendOtp = async (phone) => {
     try {
-      localStorage.setItem('userToken', token);
-      localStorage.setItem('userData', JSON.stringify(userData));
-      setUser(userData);
-      setIsAuthenticated(true);
       setError(null);
-      return { success: true, user: userData };
+      const response = await api.post('/auth/send-otp', { phone });
+      return response.data;
     } catch (error) {
-      const errorMessage = 'Login failed';
+      const errorMessage = error.response?.data?.message || 'Failed to send OTP';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
   };
 
-  const login = async (phone, name = null) => {
+  // Verify OTP and login
+  const verifyOtp = async (phone, otp) => {
     try {
+      setError(null);
       setLoading(true);
-      setError(null);
       
-      let userResponse;
-      try {
-        userResponse = await api.get(`/users/phone/${phone}`);
-      } catch (error) {
-        if (error.response?.status === 404) {
-          const createUserData = { phone, name: name || 'Customer' };
-          userResponse = await api.post('/users', createUserData);
-        } else {
-          throw error;
-        }
-      }
-
-      if (userResponse.data.success) {
-        const userData = userResponse.data.data;
-        const token = `user-token-${Date.now()}`;
-        
-        localStorage.setItem('userToken', token);
-        localStorage.setItem('userData', JSON.stringify(userData));
-        
-        setUser(userData);
+      const response = await api.post('/auth/verify-otp', 
+        { phone, otp }, 
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setUser(response.data.user);
         setIsAuthenticated(true);
-        setError(null);
-        
-        return { success: true, user: userData };
+        return { success: true, user: response.data.user };
+      } else {
+        setError(response.data.message);
+        return { success: false, error: response.data.message };
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Login failed';
+      const errorMessage = error.response?.data?.message || 'OTP verification failed';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -108,26 +102,47 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('userToken');
-    localStorage.removeItem('userData');
-    setUser(null);
-    setIsAuthenticated(false);
-    setError(null);
+  // Resend OTP
+  const resendOtp = async (phone) => {
+    try {
+      setError(null);
+      const response = await api.post('/auth/resend-otp', { phone });
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to resend OTP';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
   };
 
+  // Logout
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout', {}, { withCredentials: true });
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      // Clear local state regardless of API call result
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(null);
+    }
+  };
+
+  // Update user profile
   const updateUser = async (updateData) => {
     try {
       if (!user?._id) {
         throw new Error('No user logged in');
       }
 
-      const response = await api.put(`/users/${user._id}`, updateData);
+      const response = await api.put(`/user/${user._id}`, updateData, {
+        withCredentials: true
+      });
       
       if (response.data.success) {
         const updatedUser = response.data.data;
         setUser(updatedUser);
-        localStorage.setItem('userData', JSON.stringify(updatedUser));
         return { success: true, user: updatedUser };
       }
     } catch (error) {
@@ -137,17 +152,49 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // Get user orders
+  const getUserOrders = async (userId = user?._id) => {
+    try {
+      if (!userId) {
+        throw new Error('User ID required');
+      }
+
+      const response = await api.get(`/user/${userId}/orders`, {
+        withCredentials: true
+      });
+      
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || 'Failed to fetch orders';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Clear error
+  const clearError = () => setError(null);
+
   const value = {
+    // State
     user,
     loading,
-    isAuthenticated: isAuthenticated && user !== null,
+    isAuthenticated,
     error,
-    login,
-    loginWithOtp, // Added OTP login method
+    
+    // Auth methods
+    sendOtp,
+    verifyOtp,
+    resendOtp,
     logout,
+    checkAuthStatus,
+    
+    // User methods
     updateUser,
-    setError,
-    checkAuthStatus
+    getUserOrders,
+    
+    // Utility methods
+    clearError,
+    setError
   };
 
   return (

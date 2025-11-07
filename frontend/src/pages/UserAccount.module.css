@@ -1,5 +1,25 @@
 /* UserAccount.module.css */
+/* Add to your UserOrders.module.css or relevant CSS file */
+.restaurantInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #007bff;
+}
 
+.restaurantIcon {
+  font-size: 14px;
+}
+
+.restaurantName {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
 /* Container Styles */
 .accountContainer {
   min-height: 100vh;
@@ -10,6 +30,8 @@
 
 /* Header Styles */
 .accountHeader {
+  margin-top: -20px;
+  margin-bottom: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 2rem 1.5rem 1.5rem;
@@ -78,9 +100,10 @@
 .accountTabs {
   display: flex;
   background: white;
-  margin: 0 1rem;
+  margin: 12px 0rem;
+  margin-bottom: 1px;
   border-radius: 15px;
-  padding: 0.5rem;
+  padding: 0rem;
   transform: translateY(-10px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
@@ -107,7 +130,7 @@
 
 .activeTab {
   background: #667eea;
-  color: white;
+  color: rgb(53, 31, 96);
   transform: translateY(-2px);
 }
 
@@ -118,7 +141,9 @@
 
 /* Main Content */
 .accountMain {
-  padding: 1rem 1.5rem 2rem;
+  
+  padding: 5px;
+  padding-bottom: 10px;
 }
 
 .tabContent {
@@ -133,9 +158,10 @@
 /* Profile Section */
 .profileSection {
   background: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  border-radius: 18px;
+  padding: 0.5rem;
+  margin-bottom: 10px;
+ 
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
@@ -702,6 +728,7 @@ input:checked + .slider:before {
 @media (min-width: 768px) {
   .accountContainer {
     max-width: 480px;
+            margin-bottom: 75px;
     margin: 0 auto;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
     min-height: 100vh;
@@ -722,6 +749,7 @@ input:checked + .slider:before {
   }
   
   .accountMain {
+            margin-bottom: 75px;
     padding: 0rem 2rem 0rem;
   }
 }

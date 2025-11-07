@@ -4,29 +4,34 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useCart } from "../context/CartContext";
 
+
+
 const UserMenu = () => {
   const { restaurantID, tableNumber } = useParams();
+  const [shake, setShake] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
-  const { cart, addToCart, updateQuantity, getCartTotal, getTotalItems } = useCart();
+  const { cart, addToCart, updateQuantity, getCartTotal, getTotalItems } =
+    useCart();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [restaurantInfo, setRestaurantInfo] = useState(null);
 
   // Define categories - you might want to make this dynamic based on actual menu categories
   const categories = {
-    "best-deals": { name: "Our Best Deals", icon: "🔥" },
-    soups: { name: "Veg Soups", icon: "🥣" },
-    starters: { name: "Starters", icon: "🍢" },
-    "main-course": { name: "Main Course", icon: "🍛" },
-    beverages: { name: "Beverages", icon: "🥤" },
-    desserts: { name: "Desserts", icon: "🍰" },
-    sides: { name: "Side Dishes", icon: "🍟" },
   };
+
+  useEffect(() => {
+    if (cart.length > 0) {
+      setShake(true);
+      const timer = setTimeout(() => setShake(false), 400); // same duration as animation
+      return () => clearTimeout(timer);
+    }
+  }, [cart]);
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -53,21 +58,19 @@ const UserMenu = () => {
             type: res.data.restaurant.type,
           });
 
-          // Set menu items - assuming the API returns menu items in the expected format
-          // You might need to transform the data to match your component's expected structure
           const menuData = res.data.menu || [];
+
           setMenuItems(
             menuData.map((item) => ({
               id: item._id || item.id,
               name: item.name,
               price: item.price,
-              category: item.category || "main-course", // default category if not provided
+              category: item.foodCategory || "main-course",
               isVegetarian: item.isVegetarian || false,
               description: item.description,
-              image: item.image,
+              image: item.imageUrl, // ✅ no need to rebuild URL
               isAvailable: item.isAvailable,
               popular: item.popular || false,
-              // Add any other properties your component expects
             }))
           );
         } else {
@@ -108,7 +111,7 @@ const UserMenu = () => {
           name:
             category.charAt(0).toUpperCase() +
             category.slice(1).replace("-", " "),
-          icon: "🍽️", // default icon
+          icon: "📋", // default icon
         };
       }
     });
@@ -185,7 +188,7 @@ const UserMenu = () => {
     return (
       <div className="user-menu-error">
         <div className="error-icon">❌</div>
-        <h3>Table No. {tableNumber} is already Occupied</h3>
+        <h3>Table No. {tableNumber} </h3>
         <p>{error}</p>
         <button
           className="retry-btn bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-xl shadow transition-all duration-300 flex items-center justify-center gap-2"
@@ -307,11 +310,7 @@ const UserMenu = () => {
                       {/* Menu Item Image */}
                       <div className="item-image">
                         <img
-                          src={
-                            item.image
-                              ? `${window.location.origin}/uploads/${item.image}`
-                              : ""
-                          }
+                          src={item.image} // ✅ already the full image URL or /api/restaurant/image/:id
                           alt={item.name}
                           className="menu-img"
                           onError={(e) => {
@@ -319,6 +318,7 @@ const UserMenu = () => {
                               "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='16' fill='%23666'%3E🍽️ Menu Image%3C/text%3E%3C/svg%3E";
                           }}
                         />
+
                         <div className="image-overlay"></div>
                       </div>
                       <div className="item-content">
@@ -467,7 +467,7 @@ const UserMenu = () => {
 
       {/* Floating Cart Summary */}
       {cart.length > 0 && (
-        <div className="floating-cart-summary">
+        <div className={`floating-cart-summary ${shake ? "shake" : ""}`}>
           <div className="cart-info">
             <div className="cart-count-badge">{totalItems}</div>
             <div className="cart-details">

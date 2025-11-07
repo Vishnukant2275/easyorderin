@@ -82,7 +82,7 @@ router.post("/send-otp", async (req, res) => {
 // Verify OTP endpoint
 router.post("/verify-otp", async (req, res) => {
   try {
-    const { phone, otp } = req.body;
+    const { phone,name, otp } = req.body;
 
     if (!phone || !otp) {
       return res.status(400).json({
@@ -136,23 +136,41 @@ router.post("/verify-otp", async (req, res) => {
 
     // OTP is valid - find or create user
     let user = await User.findOne({ phone });
-    
-    if (!user) {
-      user = new User({
-        phone,
-        name: `Customer${phone.slice(-4)}`,
-      });
-      await user.save();
-    }
 
-    // Create session
+if (!user) {
+  // Create new user if not found
+  user = new User({
+    phone,
+    name: name || `Customer${phone.slice(-4)}`,
+  });
+  await user.save();
+} else {
+  // Update existing user's name with the name from frontend
+  if (name && name.trim() !== '') {
+    user.name = name.trim();
+    await user.save();
+  }
+}
+
+    // Create session with user data
     req.session.user = {
-      id: user._id,
+      id: user._id.toString(),
       phone: user.phone,
       name: user.name,
       email: user.email,
+      createdAt: new Date()
     };
 
+    // Save session explicitly (though express-session auto-saves on response end)
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    console.log("Session created for user:", req.session.user);
+    
     // Clear OTP after successful verification
     delete otpStore[phone];
 
@@ -165,8 +183,7 @@ router.post("/verify-otp", async (req, res) => {
         phone: user.phone,
         email: user.email,
       },
-      // In production, you might want to return a JWT token instead
-      // token: generateJWT(user)
+      sessionId: req.sessionID // Optional: for debugging
     });
   } catch (error) {
     console.error("Error verifying OTP:", error);
@@ -177,46 +194,7 @@ router.post("/verify-otp", async (req, res) => {
   }
 });
 
-// Check authentication status
-router.get("/check-auth", async (req, res) => {
-  try {
-    if (req.session.user) {
-      // Verify user still exists in database
-      const user = await User.findById(req.session.user.id);
-      if (!user) {
-        req.session.destroy();
-        return res.json({
-          success: false,
-          isAuthenticated: false,
-          message: "User not found"
-        });
-      }
 
-      return res.json({
-        success: true,
-        isAuthenticated: true,
-        user: {
-          _id: user._id,
-          name: user.name,
-          phone: user.phone,
-          email: user.email,
-        }
-      });
-    }
-
-    res.json({
-      success: true,
-      isAuthenticated: false,
-      user: null
-    });
-  } catch (error) {
-    console.error("Error checking auth:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to check authentication status",
-    });
-  }
-});
 
 // Get current user profile
 router.get("/me", async (req, res) => {
@@ -258,21 +236,36 @@ router.get("/me", async (req, res) => {
   }
 });
 
-// Logout endpoint
+
+// Check if user is authenticated
+router.get("/check-auth", (req, res) => {
+  if (req.session.user) {
+    res.json({
+      authenticated: true,
+      user: req.session.user
+    });
+  } else {
+    res.json({
+      authenticated: false
+    });
+  }
+});
+
+// Logout route
 router.post("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error("Error destroying session:", err);
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        message: "Logout failed" 
+        message: "Failed to logout"
       });
     }
     
-    res.clearCookie("connect.sid");
-    res.json({ 
-      success: true, 
-      message: "Logged out successfully" 
+    res.clearCookie('sessionId'); // Clear the session cookie
+    res.json({
+      success: true,
+      message: "Logged out successfully"
     });
   });
 });
@@ -324,5 +317,15 @@ router.post("/resend-otp", async (req, res) => {
     });
   }
 });
+
+
+router.get("/check-session", (req, res) => {
+  if (req.session && req.session.restaurantId) {
+    return res.json({ loggedIn: true });
+  } else {
+    return res.json({ loggedIn: false });
+  }
+});
+
 
 module.exports = router;

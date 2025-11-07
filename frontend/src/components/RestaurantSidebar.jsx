@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
-import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import {
+  FaUserCircle,
+  FaSignOutAlt,
+  FaBars,
+  FaTimes,
+  FaHome,
+  FaList,
+  FaFire,
+  FaCheckCircle,
+  FaEllipsisH,
+} from "react-icons/fa";
 import { useRestaurant } from "../context/RestaurantContext";
-import api from "../services/api";
 
 const RestaurantSidebar = () => {
+  const navigate = useNavigate();
   const { restaurant, loading, error } = useRestaurant();
   const [isMobile, setIsMobile] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const location = useLocation();
 
   // Check screen size on mount and resize
   useEffect(() => {
@@ -17,38 +29,49 @@ const RestaurantSidebar = () => {
 
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
-    
+
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  // Close menu when clicking outside on mobile
+  // Close menus when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isMobile && isMenuOpen) {
-        const sidebar = document.querySelector('.restaurant-sidebar');
-        const hamburger = document.querySelector('.hamburger-btn');
-        
-        if (sidebar && !sidebar.contains(event.target) && 
-            hamburger && !hamburger.contains(event.target)) {
-          setIsMenuOpen(false);
+      if (isMobile) {
+        const sidebar = document.querySelector(".restaurant-sidebar");
+        const hamburger = document.querySelector(".hamburger-btn");
+        const moreMenu = document.querySelector(".more-menu");
+
+        if (isMenuOpen) {
+          if (
+            sidebar &&
+            !sidebar.contains(event.target) &&
+            hamburger &&
+            !hamburger.contains(event.target)
+          ) {
+            setIsMenuOpen(false);
+          }
+        }
+
+        if (showMoreMenu && moreMenu && !moreMenu.contains(event.target)) {
+          setShowMoreMenu(false);
         }
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMobile, isMenuOpen]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMobile, isMenuOpen, showMoreMenu]);
 
   // Prevent body scroll when menu is open on mobile
   useEffect(() => {
     if (isMobile && isMenuOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isMobile, isMenuOpen]);
 
@@ -56,9 +79,33 @@ const RestaurantSidebar = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const toggleMoreMenu = () => {
+    setShowMoreMenu(!showMoreMenu);
+  };
+
   const closeMenu = () => {
     if (isMobile) {
       setIsMenuOpen(false);
+      setShowMoreMenu(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/restaurant/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        console.log("Logged out successfully");
+        sessionStorage.removeItem("isLoggedIn");
+        window.location.href = "/restaurant/login";
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (err) {
+      console.error("Error logging out:", err);
     }
   };
 
@@ -67,43 +114,180 @@ const RestaurantSidebar = () => {
 
   return (
     <>
-      {/* Mobile Header with Hamburger Button */}
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <>
+          <div className="mobile-bottom-nav">
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                `nav-item ${isActive ? "active" : ""}`
+              }
+              onClick={closeMenu}
+              end
+            >
+              <FaHome size={20} />
+              <span>Home</span>
+            </NavLink>
+
+            <NavLink
+              to="/dashboard/pending-orders"
+              className={({ isActive }) =>
+                `nav-item ${isActive ? "active" : ""}`
+              }
+              onClick={closeMenu}
+            >
+              <FaList size={20} />
+              <span>Pending</span>
+            </NavLink>
+
+            <NavLink
+              to="/dashboard/preparing"
+              className={({ isActive }) =>
+                `nav-item ${isActive ? "active" : ""}`
+              }
+              onClick={closeMenu}
+            >
+              <FaFire size={20} />
+              <span>Preparing</span>
+            </NavLink>
+
+            <NavLink
+              to="/dashboard/served"
+              className={({ isActive }) =>
+                `nav-item ${isActive ? "active" : ""}`
+              }
+              onClick={closeMenu}
+            >
+              <FaCheckCircle size={20} />
+              <span>Served</span>
+            </NavLink>
+
+            <div
+              className={`nav-item more-button ${showMoreMenu ? "active" : ""}`}
+              onClick={toggleMoreMenu}
+            >
+              <FaEllipsisH size={20} />
+              <span>More</span>
+            </div>
+          </div>
+
+          {/* More Menu Dropdown */}
+          {showMoreMenu && (
+            <div className="more-menu">
+              <NavLink
+                to="/dashboard/tables"
+                className={({ isActive }) =>
+                  `more-menu-item ${isActive ? "active" : ""}`
+                }
+                onClick={closeMenu}
+              >
+                <i className="bi bi-grid-3x3-gap me-2"></i> Manage Tables
+              </NavLink>
+              <NavLink
+                to="/dashboard/menu"
+                className={({ isActive }) =>
+                  `more-menu-item ${isActive ? "active" : ""}`
+                }
+                onClick={closeMenu}
+              >
+                <i className="bi bi-journal-text me-2"></i> Menu Management
+              </NavLink>
+              <NavLink
+                to="/dashboard/payment"
+                className={({ isActive }) =>
+                  `more-menu-item ${isActive ? "active" : ""}`
+                }
+                onClick={closeMenu}
+              >
+                <i className="bi bi-credit-card me-2"></i> Payment Options
+              </NavLink>
+              <NavLink
+                to="/dashboard/analytics"
+                className={({ isActive }) =>
+                  `more-menu-item ${isActive ? "active" : ""}`
+                }
+                onClick={closeMenu}
+              >
+                <i className="bi bi-graph-up me-2"></i> Analytics{" "}
+              </NavLink>
+              <NavLink
+                to="/dashboard/staff"
+                className={({ isActive }) =>
+                  `more-menu-item ${isActive ? "active" : ""}`
+                }
+                onClick={closeMenu}
+              >
+                <i className="bi bi-people me-2"></i> Staff Management
+              </NavLink>
+              <div className="more-menu-item" onClick={handleLogout}>
+                <i className="bi bi-box-arrow-right me-2"></i> Logout
+              </div>
+            </div>
+          )}
+
+          {/* Overlay for more menu */}
+          {showMoreMenu && (
+            <div className="mobile-overlay" onClick={closeMenu}></div>
+          )}
+        </>
+      )}
+
+      {/* Mobile Header with Hamburger Button - Only show when sidebar is needed */}
       {isMobile && (
         <div className="mobile-header">
-          <button 
+          <button
             className="hamburger-btn"
             onClick={toggleMenu}
             aria-label="Toggle menu"
           >
-            {isMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+            {isMenuOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
           </button>
           <div className="mobile-brand">
             <i className="bi bi-restaurant me-2"></i>
-            <span>My Restaurant</span>
+            <span className="brand-text">
+              {restaurant?.restaurantName || "My Restaurant"}
+            </span>
           </div>
-          <div className="user-avatar-mobile">
-            <FaUserCircle size={28} />
+          <div
+            className="user-avatar-mobile"
+            onClick={handleLogout}
+            title="Logout"
+          >
+            <FaSignOutAlt size={24} className="logout-icon" />
+            <style jsx>{`
+              .user-avatar-mobile {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                color: #dc3545; /* Bootstrap red */
+                transition: all 0.3s ease;
+              }
+              .user-avatar-mobile:hover {
+                color: #b02a37;
+                transform: scale(1.1);
+              }
+            `}</style>
           </div>
         </div>
       )}
-
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay for sidebar */}
       {isMobile && isMenuOpen && (
-        <div 
-          className="mobile-overlay"
-          onClick={closeMenu}
-        ></div>
+        <div className="mobile-overlay" onClick={closeMenu}></div>
       )}
 
-      {/* Sidebar */}
-      <div 
-        className={`restaurant-sidebar ${isMobile ? 'mobile' : ''} ${isMenuOpen ? 'open' : ''}`}
+      {/* Sidebar - Hidden on mobile except when menu is open */}
+      <div
+        className={`restaurant-sidebar ${isMobile ? "mobile" : ""} ${
+          isMenuOpen ? "open" : ""
+        }`}
       >
         <div
           className="d-flex flex-column flex-shrink-0 p-3 text-white sidebar-content"
           style={{
-            width: "280px",
-            minHeight: "100vh",
+            width: "229px",
+            minHeight: "50vh",
             background: "linear-gradient(180deg, #1f1f1f, #3a3a3a)",
             borderTopRightRadius: "20px",
             borderBottomRightRadius: "20px",
@@ -197,6 +381,17 @@ const RestaurantSidebar = () => {
             </li>
             <li>
               <NavLink
+                to="/dashboard/payment"
+                className={({ isActive }) =>
+                  `nav-link text-white ${isActive ? "active" : ""}`
+                }
+                onClick={closeMenu}
+              >
+                <i className="bi bi-credit-card me-2"></i> Payment Options
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
                 to="/dashboard/analytics"
                 className={({ isActive }) =>
                   `nav-link text-white ${isActive ? "active" : ""}`
@@ -265,60 +460,12 @@ const RestaurantSidebar = () => {
                   borderRadius: "10px",
                   transition: "all 0.3s ease",
                 }}
-                onClick={async () => {
-                  try {
-                    // Call your backend logout endpoint
-                    const response = await fetch("/api/restaurant/logout", {
-                      method: "POST",
-                      credentials: "include",
-                    });
-
-                    if (response.ok) {
-                      console.log("Logged out successfully");
-                      window.location.href = "/restaurant/login";
-                    } else {
-                      console.error("Logout failed");
-                    }
-                  } catch (err) {
-                    console.error("Error logging out:", err);
-                  }
-                }}
+                onClick={handleLogout}
               >
                 <i className="bi bi-box-arrow-right me-2"></i>
                 Logout
               </button>
             </>
-          )}
-
-          {/* Mobile-only logout button */}
-          {isMobile && (
-            <button
-              className="btn btn-outline-danger mt-3 w-100"
-              style={{
-                borderRadius: "10px",
-                transition: "all 0.3s ease",
-              }}
-              onClick={async () => {
-                try {
-                  const response = await fetch("/api/restaurant/logout", {
-                    method: "POST",
-                    credentials: "include",
-                  });
-
-                  if (response.ok) {
-                    console.log("Logged out successfully");
-                    window.location.href = "/restaurant/login";
-                  } else {
-                    console.error("Logout failed");
-                  }
-                } catch (err) {
-                  console.error("Error logging out:", err);
-                }
-              }}
-            >
-              <i className="bi bi-box-arrow-right me-2"></i>
-              Logout
-            </button>
           )}
         </div>
 
@@ -381,6 +528,92 @@ const RestaurantSidebar = () => {
               color: white;
             }
 
+            /* Mobile bottom navigation */
+            .mobile-bottom-nav {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              height: 60px;
+              background:white;
+              
+              display: flex;
+              align-items: center;
+              justify-content: space-around;
+              border-top: 1px solid #e0e0e0;
+              z-index: 1000;
+              box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            }
+
+            .mobile-bottom-nav .nav-item {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              flex: 1;
+              height: 100%;
+              text-decoration: none;
+              color: #666;
+              font-size: 0.75rem;
+              transition: all 0.3s ease;
+              padding: 8px 4px;
+            }
+
+            .mobile-bottom-nav .nav-item.active {
+              color: #0d6efd;
+              background: rgba(13, 110, 253, 0.05);
+            }
+
+            .mobile-bottom-nav .nav-item:hover {
+              color: #0d6efd;
+            }
+
+            .mobile-bottom-nav .nav-item span {
+              margin-top: 4px;
+              font-weight: 500;
+            }
+
+            .more-button {
+              cursor: pointer;
+            }
+
+            /* More menu */
+            .more-menu {
+              position: fixed;
+              bottom: 70px;
+              right: 10px;
+              background: white;
+              border-radius: 12px;
+              box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+              z-index: 1002;
+              min-width: 200px;
+              overflow: hidden;
+            }
+
+            .more-menu-item {
+              display: flex;
+              align-items: center;
+              padding: 12px 16px;
+              text-decoration: none;
+              color: #333;
+              border-bottom: 1px solid #f0f0f0;
+              transition: background-color 0.3s;
+              font-size: 0.9rem;
+            }
+
+            .more-menu-item:last-child {
+              border-bottom: none;
+            }
+
+            .more-menu-item:hover {
+              background: #f8f9fa;
+            }
+
+            .more-menu-item.active {
+              background: rgba(13, 110, 253, 0.1);
+              color: #0d6efd;
+            }
+
             /* Mobile overlay */
             .mobile-overlay {
               position: fixed;
@@ -419,6 +652,7 @@ const RestaurantSidebar = () => {
             @media (max-width: 767px) {
               body {
                 padding-top: 60px;
+                padding-bottom: 70px;
               }
             }
           `}

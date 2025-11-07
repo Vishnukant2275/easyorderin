@@ -10,6 +10,7 @@ const RestoSignUp = () => {
   const [otpButtonText, setOtpButtonText] = useState("Send OTP");
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [restaurant, setRestaurant] = useState({
     restaurantName: "",
@@ -27,8 +28,97 @@ const RestoSignUp = () => {
     logoImage: null,
   });
 
+  // Validation functions
+  const validateStep1 = () => {
+    const newErrors = {};
+
+    if (!restaurant.restaurantName.trim()) {
+      newErrors.restaurantName = "Restaurant name is required";
+    }
+
+    if (!restaurant.ownerName.trim()) {
+      newErrors.ownerName = "Owner name is required";
+    }
+
+    if (!restaurant.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(restaurant.email)) {
+      newErrors.email = "Email is invalid";
+    }
+
+    if (!restaurant.contactNumber.trim()) {
+      newErrors.contactNumber = "Contact number is required";
+    } else if (!/^\d{10}$/.test(restaurant.contactNumber)) {
+      newErrors.contactNumber = "Contact number must be 10 digits";
+    }
+
+    if (!otpVerified) {
+      newErrors.otp = "Email verification is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const newErrors = {};
+
+    if (!restaurant.address.trim()) {
+      newErrors.address = "Address is required";
+    }
+
+    if (!restaurant.city.trim()) {
+      newErrors.city = "City is required";
+    }
+
+    if (!restaurant.state.trim()) {
+      newErrors.state = "State is required";
+    }
+
+    if (!restaurant.pinCode.trim()) {
+      newErrors.pinCode = "Pincode is required";
+    } else if (!/^\d{6}$/.test(restaurant.pinCode)) {
+      newErrors.pinCode = "Pincode must be 6 digits";
+    }
+
+    if (!restaurant.restaurantType) {
+      newErrors.restaurantType = "Restaurant type is required";
+    }
+
+    if (!restaurant.seatingCapacity) {
+      newErrors.seatingCapacity = "Seating capacity is required";
+    } else if (restaurant.seatingCapacity < 1 || restaurant.seatingCapacity > 500) {
+      newErrors.seatingCapacity = "Seating capacity must be between 1 and 500";
+    }
+
+    if (!restaurant.password) {
+      newErrors.password = "Password is required";
+    } else if (restaurant.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!restaurant.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (restaurant.password !== restaurant.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const sendOtp = async (e) => {
     e.preventDefault();
+    
+    // Validate email before sending OTP
+    if (!restaurant.email.trim()) {
+      setErrors({ email: "Email is required" });
+      return;
+    } else if (!/\S+@\S+\.\S+/.test(restaurant.email)) {
+      setErrors({ email: "Email is invalid" });
+      return;
+    }
+
     setIsLoading(true);
     const notify = () => toast.success("OTP sent successfully!");
     const otpNotSent = (error) =>
@@ -45,6 +135,7 @@ const RestoSignUp = () => {
 
       if (data.success) {
         setOtpSent(true);
+        setErrors({}); // Clear errors
         notify();
         setOtpButtonText("Resend OTP");
       } else {
@@ -58,6 +149,14 @@ const RestoSignUp = () => {
   };
 
   const verifyOtp = async () => {
+    if (!otp.trim()) {
+      setErrors({ otp: "OTP is required" });
+      return;
+    } else if (otp.length !== 6) {
+      setErrors({ otp: "OTP must be 6 digits" });
+      return;
+    }
+
     setIsLoading(true);
     const otpVerifiedMsg = () => toast.success("OTP verified successfully!");
     const otpNotVerifiedMsg = (error) =>
@@ -74,12 +173,14 @@ const RestoSignUp = () => {
 
       if (data.success) {
         setOtpVerified(true);
+        setErrors({}); // Clear errors
         otpVerifiedMsg();
-        setCurrentStep(2);
       } else {
+        setErrors({ otp: data.message || "Invalid OTP" });
         otpNotVerifiedMsg(data.message);
       }
     } catch (error) {
+      setErrors({ otp: error.message });
       otpNotVerifiedMsg(error.message);
     } finally {
       setIsLoading(false);
@@ -92,10 +193,38 @@ const RestoSignUp = () => {
       ...prev,
       [name]: type === "file" ? files[0] : value,
     }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ""
+      }));
+    }
+  };
+
+  const handleOtpChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6); // Only numbers, max 6 digits
+    setOtp(value);
+    
+    // Clear OTP error when user types
+    if (errors.otp) {
+      setErrors(prev => ({
+        ...prev,
+        otp: ""
+      }));
+    }
   };
 
   const handleRegistration = async (e) => {
     e.preventDefault();
+    
+    // Validate step 2 before submission
+    if (!validateStep2()) {
+      toast.error("Please fix the errors before submitting");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -129,7 +258,11 @@ const RestoSignUp = () => {
   };
 
   const nextStep = () => {
-    setCurrentStep(prev => prev + 1);
+    if (validateStep1()) {
+      setCurrentStep(prev => prev + 1);
+    } else {
+      toast.error("Please fill all required fields correctly");
+    }
   };
 
   const prevStep = () => {
@@ -202,7 +335,7 @@ const RestoSignUp = () => {
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-shop"></i>
-                    Restaurant Name
+                    Restaurant Name *
                   </label>
                   <input
                     type="text"
@@ -210,15 +343,16 @@ const RestoSignUp = () => {
                     value={restaurant.restaurantName}
                     onChange={handleChange}
                     placeholder="Enter restaurant name"
-                    className="form-input"
+                    className={`form-input ${errors.restaurantName ? 'error' : ''}`}
                     required
                   />
+                  {errors.restaurantName && <span className="error-message">{errors.restaurantName}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-person-badge"></i>
-                    Owner's Name
+                    Owner's Name *
                   </label>
                   <input
                     type="text"
@@ -226,15 +360,16 @@ const RestoSignUp = () => {
                     value={restaurant.ownerName}
                     onChange={handleChange}
                     placeholder="Enter owner's name"
-                    className="form-input"
+                    className={`form-input ${errors.ownerName ? 'error' : ''}`}
                     required
                   />
+                  {errors.ownerName && <span className="error-message">{errors.ownerName}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-envelope"></i>
-                    Email Address
+                    Email Address *
                   </label>
                   <input
                     type="email"
@@ -242,26 +377,29 @@ const RestoSignUp = () => {
                     value={restaurant.email}
                     onChange={handleChange}
                     placeholder="Enter email address"
-                    className="form-input"
+                    className={`form-input ${errors.email ? 'error' : ''}`}
                     disabled={otpVerified}
                     required
                   />
+                  {errors.email && <span className="error-message">{errors.email}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-phone"></i>
-                    Contact Number
+                    Contact Number *
                   </label>
                   <input
                     type="tel"
                     name="contactNumber"
                     value={restaurant.contactNumber}
                     onChange={handleChange}
-                    placeholder="Enter contact number"
-                    className="form-input"
+                    placeholder="Enter 10-digit contact number"
+                    className={`form-input ${errors.contactNumber ? 'error' : ''}`}
+                    maxLength="10"
                     required
                   />
+                  {errors.contactNumber && <span className="error-message">{errors.contactNumber}</span>}
                 </div>
               </div>
 
@@ -296,17 +434,18 @@ const RestoSignUp = () => {
                   <div className="form-group">
                     <label className="form-label">
                       <i className="bi bi-shield-check"></i>
-                      Enter OTP
+                      Enter OTP *
                     </label>
                     <input
                       type="text"
                       name="otp"
                       value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
+                      onChange={handleOtpChange}
                       placeholder="Enter the 6-digit OTP"
-                      className="form-input"
+                      className={`form-input ${errors.otp ? 'error' : ''}`}
                       maxLength="6"
                     />
+                    {errors.otp && <span className="error-message">{errors.otp}</span>}
                   </div>
                   <button 
                     type="button" 
@@ -331,7 +470,7 @@ const RestoSignUp = () => {
                   type="button"
                   className="btn-next"
                   onClick={nextStep}
-                  disabled={!otpVerified || !restaurant.restaurantName || !restaurant.ownerName || !restaurant.contactNumber}
+                  disabled={!otpVerified}
                 >
                   Continue
                   <i className="bi bi-arrow-right"></i>
@@ -352,7 +491,7 @@ const RestoSignUp = () => {
                 <div className="form-group full-width">
                   <label className="form-label">
                     <i className="bi bi-geo-alt"></i>
-                    Address
+                    Address *
                   </label>
                   <textarea
                     name="address"
@@ -360,15 +499,16 @@ const RestoSignUp = () => {
                     onChange={handleChange}
                     placeholder="Enter complete address"
                     rows="3"
-                    className="form-textarea"
+                    className={`form-textarea ${errors.address ? 'error' : ''}`}
                     required
                   ></textarea>
+                  {errors.address && <span className="error-message">{errors.address}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-building"></i>
-                    City
+                    City *
                   </label>
                   <input
                     type="text"
@@ -376,15 +516,16 @@ const RestoSignUp = () => {
                     value={restaurant.city}
                     onChange={handleChange}
                     placeholder="Enter city"
-                    className="form-input"
+                    className={`form-input ${errors.city ? 'error' : ''}`}
                     required
                   />
+                  {errors.city && <span className="error-message">{errors.city}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-map"></i>
-                    State
+                    State *
                   </label>
                   <input
                     type="text"
@@ -392,37 +533,40 @@ const RestoSignUp = () => {
                     value={restaurant.state}
                     onChange={handleChange}
                     placeholder="Enter state"
-                    className="form-input"
+                    className={`form-input ${errors.state ? 'error' : ''}`}
                     required
                   />
+                  {errors.state && <span className="error-message">{errors.state}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-pin-map"></i>
-                    Pincode
+                    Pincode *
                   </label>
                   <input
                     type="text"
                     name="pinCode"
                     value={restaurant.pinCode}
                     onChange={handleChange}
-                    placeholder="Enter pincode"
-                    className="form-input"
+                    placeholder="Enter 6-digit pincode"
+                    className={`form-input ${errors.pinCode ? 'error' : ''}`}
+                    maxLength="6"
                     required
                   />
+                  {errors.pinCode && <span className="error-message">{errors.pinCode}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-tags"></i>
-                    Restaurant Type
+                    Restaurant Type *
                   </label>
                   <select
                     name="restaurantType"
                     value={restaurant.restaurantType}
                     onChange={handleChange}
-                    className="form-select"
+                    className={`form-select ${errors.restaurantType ? 'error' : ''}`}
                     required
                   >
                     <option value="" disabled>Select Type</option>
@@ -431,12 +575,13 @@ const RestoSignUp = () => {
                     <option value="delivery">Delivery</option>
                     <option value="all">All Services</option>
                   </select>
+                  {errors.restaurantType && <span className="error-message">{errors.restaurantType}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-people"></i>
-                    Seating Capacity
+                    Seating Capacity *
                   </label>
                   <input
                     type="number"
@@ -446,9 +591,10 @@ const RestoSignUp = () => {
                     placeholder="Enter capacity"
                     min="1"
                     max="500"
-                    className="form-input"
+                    className={`form-input ${errors.seatingCapacity ? 'error' : ''}`}
                     required
                   />
+                  {errors.seatingCapacity && <span className="error-message">{errors.seatingCapacity}</span>}
                 </div>
 
                 <div className="form-group full-width">
@@ -475,42 +621,36 @@ const RestoSignUp = () => {
                 <div className="form-group">
                   <label className="form-label">
                     <i className="bi bi-lock"></i>
-                    Password
+                    Password *
                   </label>
                   <input
                     type="password"
                     name="password"
                     value={restaurant.password}
                     onChange={handleChange}
-                    placeholder="Enter password"
-                    className="form-input"
+                    placeholder="Enter password (min 6 characters)"
+                    className={`form-input ${errors.password ? 'error' : ''}`}
                     required
                   />
+                  {errors.password && <span className="error-message">{errors.password}</span>}
                 </div>
 
-                {restaurant.password.length > 0 && (
-                  <div className="form-group">
-                    <label className="form-label">
-                      <i className="bi bi-lock-fill"></i>
-                      Confirm Password
-                    </label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={restaurant.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="Re-enter password"
-                      className="form-input"
-                      required
-                    />
-                    {restaurant.confirmPassword && restaurant.password !== restaurant.confirmPassword && (
-                      <span className="password-error">
-                        <i className="bi bi-exclamation-circle"></i>
-                        Passwords don't match
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="form-group">
+                  <label className="form-label">
+                    <i className="bi bi-lock-fill"></i>
+                    Confirm Password *
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={restaurant.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Re-enter password"
+                    className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+                    required
+                  />
+                  {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                </div>
               </div>
 
               <div className="form-actions">
@@ -521,7 +661,7 @@ const RestoSignUp = () => {
                 <button
                   type="submit"
                   className="btn-submit"
-                  disabled={isLoading || !restaurant.password || !restaurant.confirmPassword || restaurant.password !== restaurant.confirmPassword}
+                  disabled={isLoading}
                 >
                   {isLoading ? (
                     <div className="loading-spinner"></div>

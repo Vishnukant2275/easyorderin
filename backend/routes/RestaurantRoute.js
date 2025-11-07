@@ -4,19 +4,14 @@ const Restaurant = require("../models/restaurant");
 const Tables = require("../models/Tables");
 const Menu = require("../models/Menu");
 const Order = require("../models/Order");
+const User = require("../models/User");
+const Payment = require("../models/Payment");
 const router = express.Router();
-
+const sharp = require("sharp");
 const multer = require("multer");
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-const upload = multer({ storage: storage });
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const { sendRestaurantOtp } = require("../mail/RestaurantMail");
 const restaurant = require("../models/restaurant");
@@ -84,7 +79,78 @@ router.get("/me", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+router.get("/get-paymentqr", async (req, res) => {
+  try {
+    const restaurantId = req.session?.restaurantId;
 
+    if (!restaurantId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in." });
+    }
+
+    const payment = await Payment.findOne({ restaurantId });
+
+    if (!payment) return res.status(404).json({ error: "No QR codes found" });
+
+    const formatted = payment.qrCodes.map((qr) => ({
+      _id: qr._id, // ✅ include this line
+      paymentMethod: qr.paymentMethod,
+      upiId: qr.upiId,
+      note: qr.note,
+      imageBase64: `data:${
+        qr.qrImage.contentType
+      };base64,${qr.qrImage.data.toString("base64")}`,
+    }));
+
+    res.json({ success: true, qrCodes: formatted });
+  } catch (err) {
+    console.error("Error fetching QR codes:", err);
+    res.status(500).json({ error: "Failed to fetch QR codes" });
+  }
+});
+// User route to get payment QR codes by restaurant ID
+router.get("/:restaurantId/payment-qrcodes", async (req, res) => {
+  try {
+    const { restaurantId } = req.params;
+
+    if (!restaurantId) {
+      return res.status(400).json({ error: "Restaurant ID is required" });
+    }
+
+    // Validate if restaurantId is a valid ObjectId
+
+    const payment = await Payment.findOne({ restaurantId });
+
+    if (!payment || !payment.qrCodes || payment.qrCodes.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No QR codes found for this restaurant",
+      });
+    }
+
+    const formatted = payment.qrCodes.map((qr) => ({
+      _id: qr._id,
+      paymentMethod: qr.paymentMethod,
+      upiId: qr.upiId,
+      note: qr.note,
+      imageBase64: `data:${
+        qr.qrImage.contentType
+      };base64,${qr.qrImage.data.toString("base64")}`,
+      createdAt: qr.createdAt,
+    }));
+
+    res.json({
+      success: true,
+      qrCodes: formatted,
+      count: formatted.length,
+    });
+  } catch (err) {
+    console.error("Error fetching QR codes for restaurant:", err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch QR codes",
+    });
+  }
+});
 router.get("/menu", async (req, res) => {
   try {
     const restaurantId = req.session?.restaurant?.id;
@@ -132,10 +198,56 @@ router.get("/orders", async (req, res) => {
         .json({ error: "Unauthorized: Restaurant not logged in" });
     }
 
+    // Get today's date at start of day (00:00:00)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get tomorrow's date at start of day (00:00:00)
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
     // ⚠️ match the field name in your DB (restaurantId)
     const orders = await Order.find({
       restaurantId: restaurantID,
-    }).sort({ createdAt: -1 });
+      createdAt: {
+        $gte: today, // Greater than or equal to today 00:00:00
+        $lt: tomorrow, // Less than tomorrow 00:00:00
+      },
+    })
+      .populate("userId", "name phone")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      orders,
+      dateRange: {
+        today: today.toISOString(),
+        tomorrow: tomorrow.toISOString(),
+      },
+      count: orders.length,
+    });
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    res
+      .status(500)
+      .json({ success: false, error: "Server error fetching orders" });
+  }
+});
+router.get("/orders/all", async (req, res) => {
+  try {
+    const restaurantID = req.session.restaurant?.id;
+    if (!restaurantID) {
+      return res
+        .status(401)
+        .json({ error: "Unauthorized: Restaurant not logged in" });
+    }
+
+    // ⚠️ match the field name in your DB (restaurantId)
+    const orders = await Order.find({
+      restaurantId: restaurantID,
+    })
+      .populate("userId", "name phone")
+      .sort({ createdAt: -1 });
 
     res.json({ success: true, orders });
   } catch (err) {
@@ -145,7 +257,97 @@ router.get("/orders", async (req, res) => {
       .json({ success: false, error: "Server error fetching orders" });
   }
 });
+router.post("/order/update", async (req, res) => {
+  try {
+    const { orderId, status } = req.body;
 
+    // Validate required fields
+    if (!orderId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID and status are required",
+      });
+    }
+
+    // Validate status value
+    const validStatuses = ["pending", "preparing", "served", "cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid status. Must be one of: pending, preparing, served, cancelled",
+      });
+    }
+
+    // Find and update the order
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      {
+        status: status,
+        // Update the updatedAt timestamp automatically due to timestamps: true
+      },
+      { new: true } // Return the updated document
+    ).populate("userId", "name phone");
+
+    if (!updatedOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // If order is being served, update the table status
+    if (status === "served") {
+      await Tables.findOneAndUpdate(
+        {
+          restaurantId: updatedOrder.restaurantId,
+          "tables.tableNumber": updatedOrder.tableNumber,
+        },
+        {
+          $set: {
+            "tables.$.status": "available",
+            "tables.$.currentOrder": null,
+          },
+        }
+      );
+    }
+
+    // If order is cancelled, also free up the table
+    if (status === "cancelled") {
+      await Tables.findOneAndUpdate(
+        {
+          restaurantId: updatedOrder.restaurantId,
+          "tables.tableNumber": updatedOrder.tableNumber,
+        },
+        {
+          $set: {
+            "tables.$.status": "available",
+            "tables.$.currentOrder": null,
+          },
+        }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Order status updated to ${status}`,
+      order: {
+        ...updatedOrder.toObject(),
+        formattedOrderNumber: `ORD-${updatedOrder.orderNumber
+          ?.toString()
+          .padStart(3, "0")}`,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+// ✅ Get menu and table status
 router.get("/:restaurantID/table/:tableNumber/getMenu", async (req, res) => {
   try {
     const { restaurantID, tableNumber } = req.params;
@@ -159,7 +361,7 @@ router.get("/:restaurantID/table/:tableNumber/getMenu", async (req, res) => {
       });
     }
 
-    // 2️⃣ Check if tables record exists for this restaurant
+    // 2️⃣ Find tables data for restaurant
     const tablesData = await Tables.findOne({ restaurantId: restaurantID });
     if (!tablesData) {
       return res.status(404).json({
@@ -168,11 +370,10 @@ router.get("/:restaurantID/table/:tableNumber/getMenu", async (req, res) => {
       });
     }
 
-    // 3️⃣ Find the specific table
+    // 3️⃣ Locate specific table
     const table = tablesData.tables.find(
       (t) => t.tableNumber === parseInt(tableNumber)
     );
-
     if (!table) {
       return res.status(404).json({
         success: false,
@@ -187,7 +388,6 @@ router.get("/:restaurantID/table/:tableNumber/getMenu", async (req, res) => {
       });
     }
 
-    // 4️⃣ Check table availability
     if (table.status !== "available") {
       return res.status(403).json({
         success: false,
@@ -195,7 +395,7 @@ router.get("/:restaurantID/table/:tableNumber/getMenu", async (req, res) => {
       });
     }
 
-    // 5️⃣ Fetch menu for this restaurant
+    // 4️⃣ Fetch menu
     const menu = await Menu.findOne({ restaurant: restaurantID });
     if (!menu || menu.items.length === 0) {
       return res.status(404).json({
@@ -204,7 +404,22 @@ router.get("/:restaurantID/table/:tableNumber/getMenu", async (req, res) => {
       });
     }
 
-    // ✅ Success: return restaurant and menu
+    // ✅ Sanitize and send menu without binary data
+    const safeMenu = menu.items
+      .filter((item) => item.isAvailable)
+      .map((item) => ({
+        _id: item._id,
+        name: item.name,
+        price: item.price,
+        description: item.description,
+        foodCategory: item.foodCategory,
+        isVegetarian: item.isVegetarian,
+        keyIngredients: item.keyIngredients,
+        isAvailable: item.isAvailable,
+        // ✅ Corrected image URL route
+        imageUrl: `/api/restaurant/image/${item._id}`,
+      }));
+
     return res.status(200).json({
       success: true,
       message: "Table available. Menu fetched successfully.",
@@ -217,7 +432,7 @@ router.get("/:restaurantID/table/:tableNumber/getMenu", async (req, res) => {
         tableNumber: table.tableNumber,
         status: table.status,
       },
-      menu: menu.items.filter((item) => item.isAvailable), // only available items
+      menu: safeMenu,
     });
   } catch (error) {
     console.error("Error fetching menu:", error);
@@ -226,6 +441,25 @@ router.get("/:restaurantID/table/:tableNumber/getMenu", async (req, res) => {
       message: "Internal Server Error",
       error: error.message,
     });
+  }
+});
+// 🖼️ Serve image for a specific menu item
+router.get("/image/:itemId", async (req, res) => {
+  try {
+    const { itemId } = req.params;
+
+    const menu = await Menu.findOne({ "items._id": itemId });
+    if (!menu) return res.status(404).send("Menu not found");
+
+    const item = menu.items.id(itemId);
+    if (!item || !item.image?.data)
+      return res.status(404).send("Image not found");
+
+    res.set("Content-Type", item.image.contentType);
+    return res.send(item.image.data);
+  } catch (error) {
+    console.error("Error fetching image:", error);
+    res.status(500).send("Error fetching image");
   }
 });
 
@@ -291,11 +525,15 @@ router.post("/login", async (req, res) => {
     const verified = await Restaurant.findOne({ email, password });
 
     if (verified) {
+      // Store both restaurant info and id in session
       req.session.restaurant = {
         id: verified._id,
         email: verified.email,
         name: verified.restaurantName,
       };
+
+      // ✅ Also store restaurantId separately for easy access
+      req.session.restaurantId = verified._id;
 
       res.json({
         success: true,
@@ -336,21 +574,42 @@ router.post("/upload/menu", upload.array("image"), async (req, res) => {
       keyIngredients,
       isAvailable,
     } = req.body;
+
     const images = req.files || [];
     const restaurantId = req.session?.restaurant?.id;
+
+    if (!restaurantId) {
+      return res.status(400).json({ msg: "Restaurant session missing" });
+    }
 
     if (!name || !price || !foodCategory) {
       return res.status(400).json({ msg: "Required fields are missing" });
     }
 
+    // Find or create a Menu for the restaurant
     let menu = await Menu.findOne({ restaurant: restaurantId });
-
     if (!menu) {
-      // Create empty menu if not exist
       menu = new Menu({ restaurant: restaurantId, items: [] });
     }
 
-    for (let i = 0; i < (Array.isArray(name) ? name.length : 1); i++) {
+    const count = Array.isArray(name) ? name.length : 1;
+
+    for (let i = 0; i < count; i++) {
+      let compressedImage = null;
+
+      // Compress image if present
+      if (images[i]) {
+        const buffer = await sharp(images[i].buffer)
+          .resize({ width: 800 }) // Resize to 800px width (keep aspect ratio)
+          .jpeg({ quality: 60 }) // Reduce quality to 60%
+          .toBuffer();
+
+        compressedImage = {
+          data: buffer,
+          contentType: "image/jpeg",
+        };
+      }
+
       menu.items.push({
         name: Array.isArray(name) ? name[i] : name,
         description: Array.isArray(description) ? description[i] : description,
@@ -363,20 +622,118 @@ router.post("/upload/menu", upload.array("image"), async (req, res) => {
           : foodCategory,
         keyIngredients: Array.isArray(keyIngredients)
           ? keyIngredients[i]
-          : keyIngredients,
+          : keyIngredients
+          ? [keyIngredients]
+          : [],
         isAvailable: Array.isArray(isAvailable) ? isAvailable[i] : isAvailable,
-        image: images[i] ? images[i].filename : null,
+        image: compressedImage,
       });
     }
 
-    await menu.save(); // Save once after all items are added
-
+    await menu.save();
     res.json({ msg: "Menu items uploaded successfully" });
   } catch (error) {
-    console.error(error);
+    console.error("Menu upload error:", error);
     res.status(500).json({ error: error.message });
   }
 });
+//payment qr code upload
+
+router.post(
+  "/upload-paymentqr",
+  upload.array("files", 10),
+  async (req, res) => {
+    try {
+      const { paymentMethod, upiId, note } = req.body;
+      const restaurantId = req.session?.restaurantId;
+
+      if (!restaurantId) {
+        return res.status(400).json({ error: "restaurantId is required" });
+      }
+
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: "No QR images uploaded" });
+      }
+
+      // Process & compress uploaded images
+      const qrCodes = await Promise.all(
+        req.files.map(async (file, index) => {
+          // 🪄 Compress + resize (QRs don’t need to be large)
+          const optimizedBuffer = await sharp(file.buffer)
+            .resize(400, 400, { fit: "inside", withoutEnlargement: true }) // max 400x400px
+            .toFormat("jpeg", { quality: 70 }) // compress to JPEG @ 70% quality
+            .toBuffer();
+
+          return {
+            paymentMethod: Array.isArray(paymentMethod)
+              ? paymentMethod[index]
+              : paymentMethod,
+            qrImage: {
+              data: optimizedBuffer, // compressed binary
+              contentType: "image/jpeg",
+            },
+            upiId: Array.isArray(upiId) ? upiId[index] : upiId,
+            note: Array.isArray(note) ? note[index] : note,
+          };
+        })
+      );
+
+      // ✅ Insert or update restaurant record efficiently
+      const paymentRecord = await Payment.findOneAndUpdate(
+        { restaurantId },
+        { $push: { qrCodes: { $each: qrCodes } } },
+        { new: true, upsert: true }
+      );
+
+      res.status(200).json({
+        message: "QR codes uploaded, optimized, and stored successfully",
+        paymentRecord,
+      });
+    } catch (err) {
+      console.error("Error while saving QR codes:", err);
+      res.status(500).json({ error: "Server error while saving QR codes" });
+    }
+  }
+);
+
+//deleting payment qr code
+router.delete("/delete-paymentqr/:qrId", async (req, res) => {
+  try {
+    const restaurantId = req.session?.restaurantId;
+    const { qrId } = req.params;
+
+    if (!restaurantId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in." });
+    }
+
+    if (!qrId) {
+      return res.status(400).json({ error: "QR ID is required" });
+    }
+
+    // Pull the QR from the qrCodes array
+    const result = await Payment.findOneAndUpdate(
+      { restaurantId },
+      { $pull: { qrCodes: { _id: qrId } } },
+      { new: true }
+    );
+
+    if (!result) {
+      return res
+        .status(404)
+        .json({ error: "QR code not found or already deleted" });
+    }
+
+    res.json({
+      success: true,
+      message: "QR code deleted successfully",
+      data: result,
+    });
+  } catch (err) {
+    console.error("Error deleting QR code:", err);
+    res.status(500).json({ error: "Server error while deleting QR code" });
+  }
+});
+
 //placing orders
 router.post(
   "/:restaurantID/table/:tableNumber/placeOrder",
@@ -470,10 +827,14 @@ router.post(
         totalPrice,
         status: "pending",
       });
+      await User.findByIdAndUpdate(userId, {
+        $push: { orderHistory: newOrder._id },
+      });
 
       // 7️⃣ Update table (mark occupied and link currentOrder)
 
       table.currentOrder = newOrder._id;
+
       await tablesData.save();
 
       // ✅ 8️⃣ Respond success
@@ -690,5 +1051,36 @@ router.patch("/menu/:itemId/toggle", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// In your orders routes (backend)
+router.patch("/:orderId/payment", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { isPaid } = req.body;
 
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { isPaid: isPaid },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: "Order not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Payment status updated to ${isPaid ? "paid" : "not paid"}`,
+      data: order,
+    });
+  } catch (error) {
+    console.error("Error updating payment status:", error);
+    res.status(500).json({
+      success: false,
+      error: "Server error while updating payment status",
+    });
+  }
+});
 module.exports = router;

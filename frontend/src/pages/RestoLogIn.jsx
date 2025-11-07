@@ -41,12 +41,14 @@ const RestoLogIn = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
+        credentials: "include", // ✅ THIS IS CRUCIAL
       });
 
       const data = await response.json();
 
       if (data.success) {
         toast.success("Email and password matched successfully");
+        sessionStorage.setItem("isLoggedIn", "true");
         window.location.href = "/dashboard";
       } else {
         toast.error(data.message);

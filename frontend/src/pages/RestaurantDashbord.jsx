@@ -10,7 +10,6 @@ const RestaurantDashbord = () => {
   return (
     <div className="d-flex">
       {/* Sidebar */}
-    
 
       {/* Main content */}
       <div className="flex-grow-1 p-4" style={{ backgroundColor: "#f8f9fa" }}>
@@ -21,21 +20,15 @@ const RestaurantDashbord = () => {
 
         {/* Row 2: Chart + Orders */}
         <div className="row mt-4">
-          <div className="col-md-6 mb-4">
-            <RevenueChart />
-          </div>
-          <div className="col-md-6 mb-4">
-            <RecentOrders />
-          </div>
+          
         </div>
-
         {/* Row 3: Popular Menu + Staff */}
         <div className="row">
           <div className="col-md-6 mb-4">
-            <PopularMenu />
+            <RecentOrders />
           </div>
           <div className="col-md-6 mb-4">
-            <StaffOverview />
+            <PopularMenu />
           </div>
         </div>
       </div>

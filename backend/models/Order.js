@@ -14,10 +14,14 @@ const orderSchema = new mongoose.Schema(
     },
     menuItems: [
       {
-        menuId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Menu",
+        name: {
+          type: String,
           required: true,
+        },
+        price: {
+          type: Number,
+          required: true,
+          min: 0,
         },
         quantity: {
           type: Number,
@@ -28,6 +32,10 @@ const orderSchema = new mongoose.Schema(
         notes: {
           type: String,
           default: "",
+        },
+        menuId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Menu",
         },
       },
     ],
@@ -48,6 +56,12 @@ const orderSchema = new mongoose.Schema(
     isPaid: {
       type: Boolean,
       default: false,
+    },
+    // 👇 Expiry field
+    expiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      index: { expires: '0s' }, // TTL index, delete when expiresAt is reached
     },
   },
   { timestamps: true }

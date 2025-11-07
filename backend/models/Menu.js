@@ -20,7 +20,10 @@ const menuSchema = new mongoose.Schema(
           required: true,
         },
         keyIngredients: { type: [String] },
-        image: { type: String },
+        image: {
+          data: Buffer,
+          contentType: String,
+        },
         isAvailable: { type: Boolean, default: true },
       },
     ],
