@@ -98,7 +98,7 @@ const RestaurantSidebar = () => {
       });
 
       if (response.ok) {
-        console.log("Logged out successfully");
+       
         sessionStorage.removeItem("isLoggedIn");
         window.location.href = "/restaurant/login";
       } else {

@@ -11,13 +11,17 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const http = require("http");
 const { Server } = require("socket.io");
-
 // 2. Load environment variables
 dotenv.config();
+const Razorpay = require("razorpay");
+
+const bodyParser = require("body-parser");
 
 // 3. Create express app & HTTP server
 const app = express();
 const server = http.createServer(app);
+app.use(bodyParser.json());
+
 
 // 4. Connect to Database
 const connectDB = require("./config/db");
@@ -151,7 +155,7 @@ const authRoutes = require("./routes/AuthRouter");
 app.use("/api/restaurant", restaurantRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
-
+app.use("/api/razorpay", require("./routes/RazorpayRoute"));
 // 12. Default Route
 app.get("/api", (req, res) => {
   res.json({ title: "Welcome", message: "API is running..." });

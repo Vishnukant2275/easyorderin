@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
-import { useRestaurant } from "../context/RestaurantContext";
+import React, { useState, useMemo } from "react";
+import { useRestaurant } from "../../context/RestaurantContext";
 
 const Served = ({ updateOrderStatus }) => {
   const { orders, menuItems } = useRestaurant();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Filter and enhance served and cancelled orders
   const { servedOrders, cancelledOrders } = useMemo(() => {
@@ -53,12 +53,21 @@ const Served = ({ updateOrderStatus }) => {
 
       // Categorize orders
       if (order.status === "served") result.servedOrders.push(enhancedOrder);
-      else if (order.status === "cancelled") result.cancelledOrders.push(enhancedOrder);
+      else if (order.status === "cancelled")
+        result.cancelledOrders.push(enhancedOrder);
     });
 
     // Sort by most recent first
-    result.servedOrders.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
-    result.cancelledOrders.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+    result.servedOrders.sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt) -
+        new Date(a.updatedAt || a.createdAt)
+    );
+    result.cancelledOrders.sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt) -
+        new Date(a.updatedAt || a.createdAt)
+    );
 
     return result;
   }, [orders, menuItems]);
@@ -96,11 +105,15 @@ const Served = ({ updateOrderStatus }) => {
 
     return (
       <div key={order._id} className="col-md-6 col-lg-4">
-        <div className="card h-100 border-success" style={{ borderWidth: '2px' }}>
+        <div
+          className="card h-100 border-success"
+          style={{ borderWidth: "2px" }}
+        >
           <div className="card-header d-flex justify-content-between align-items-center">
             <div>
               <strong>
-                {order.formattedOrderNumber || `Order #${order._id?.slice(0, 8)}`}
+                {order.formattedOrderNumber ||
+                  `Order #${order._id?.slice(0, 8)}`}
               </strong>
               <div className="small text-muted">
                 <i className="bi bi-person me-1"></i>
@@ -109,11 +122,12 @@ const Served = ({ updateOrderStatus }) => {
             </div>
             <span className="badge bg-success">Served</span>
           </div>
-          
+
           <div className="card-body">
             <div className="d-flex justify-content-between mb-2">
               <span>
-                <i className="bi bi-table me-2"></i>Table {order.tableNumber || "N/A"}
+                <i className="bi bi-table me-2"></i>Table{" "}
+                {order.tableNumber || "N/A"}
               </span>
               <span className="badge bg-light text-dark">
                 {order.menuItems?.length || 0} items
@@ -123,7 +137,10 @@ const Served = ({ updateOrderStatus }) => {
             <div className="mb-3">
               <strong>Items:</strong>
               {(order.menuItems || []).map((item, idx) => (
-                <div key={idx} className="d-flex justify-content-between small mt-1">
+                <div
+                  key={idx}
+                  className="d-flex justify-content-between small mt-1"
+                >
                   <div>
                     {item.quantity}× {item.name}
                     {item.notes && (
@@ -152,7 +169,11 @@ const Served = ({ updateOrderStatus }) => {
                 <small className="text-muted">
                   <i className="bi bi-clock me-1"></i>
                   {order.createdAt
-                    ? Math.floor((new Date(order.updatedAt || order.createdAt) - new Date(order.createdAt)) / 60000) + " min total"
+                    ? Math.floor(
+                        (new Date(order.updatedAt || order.createdAt) -
+                          new Date(order.createdAt)) /
+                          60000
+                      ) + " min total"
                     : "Time unknown"}
                 </small>
               </div>
@@ -172,13 +193,13 @@ const Served = ({ updateOrderStatus }) => {
             <div className="btn-group w-100">
               <button
                 className="btn btn-sm btn-outline-warning"
-                onClick={() => updateOrderStatus(order._id, 'preparing')}
+                onClick={() => updateOrderStatus(order._id, "preparing")}
               >
                 Move Back to Preparing
               </button>
               <button
                 className="btn btn-sm btn-outline-info"
-                onClick={() => updateOrderStatus(order._id, 'pending')}
+                onClick={() => updateOrderStatus(order._id, "pending")}
               >
                 Move to Pending
               </button>
@@ -199,7 +220,7 @@ const Served = ({ updateOrderStatus }) => {
             {servedOrders.length} served • {cancelledOrders.length} cancelled
           </p>
         </div>
-        <div className="input-group" style={{ width: '300px' }}>
+        <div className="input-group" style={{ width: "300px" }}>
           <span className="input-group-text">
             <i className="bi bi-search"></i>
           </span>
@@ -218,13 +239,18 @@ const Served = ({ updateOrderStatus }) => {
         {filteredServedOrders.length === 0 ? (
           <div className="col-12">
             <div className="text-center py-5">
-              <i className="bi bi-check-circle text-success" style={{ fontSize: '3rem' }}></i>
+              <i
+                className="bi bi-check-circle text-success"
+                style={{ fontSize: "3rem" }}
+              ></i>
               <h4 className="mt-3 text-muted">
-                {servedOrders.length === 0 ? "No served orders" : "No orders match your search"}
+                {servedOrders.length === 0
+                  ? "No served orders"
+                  : "No orders match your search"}
               </h4>
               <p className="text-muted">
-                {servedOrders.length === 0 
-                  ? "Orders will appear here after they are served" 
+                {servedOrders.length === 0
+                  ? "Orders will appear here after they are served"
                   : "Try a different search term"}
               </p>
             </div>
@@ -240,11 +266,15 @@ const Served = ({ updateOrderStatus }) => {
           <h4 className="mb-3">Cancelled Orders</h4>
           <div className="list-group">
             {cancelledOrders.slice(0, 10).map((order) => (
-              <div key={order._id} className="list-group-item list-group-item-danger">
+              <div
+                key={order._id}
+                className="list-group-item list-group-item-danger"
+              >
                 <div className="d-flex justify-content-between align-items-center">
                   <div>
                     <strong>
-                      {order.formattedOrderNumber || `Order #${order._id.slice(0, 8)}`}
+                      {order.formattedOrderNumber ||
+                        `Order #${order._id.slice(0, 8)}`}
                     </strong>
                     <small className="text-muted ms-2">
                       (Table {order.tableNumber})
@@ -275,7 +305,10 @@ const Served = ({ updateOrderStatus }) => {
                 </div>
                 <div className="mt-1">
                   <small className="text-muted">
-                    Items: {(order.menuItems || []).map(item => `${item.quantity}x ${item.name}`).join(', ')}
+                    Items:{" "}
+                    {(order.menuItems || [])
+                      .map((item) => `${item.quantity}x ${item.name}`)
+                      .join(", ")}
                   </small>
                 </div>
               </div>

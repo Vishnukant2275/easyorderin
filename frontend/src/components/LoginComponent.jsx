@@ -12,7 +12,7 @@ const LoginComponent = () => {
     const result = await login(phone, name);
     if (result.success) {
       // Redirect or show success
-      console.log('Logged in successfully:', result.user);
+      alert('Login successful!');
     } else {
       // Show error
       alert(result.error);

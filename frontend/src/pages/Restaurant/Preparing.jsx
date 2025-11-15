@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useRestaurant } from "../context/RestaurantContext";
-import api from "../services/api";
+import { useRestaurant } from "../../context/RestaurantContext";
+import api from "../../services/api";
 
 const Preparing = () => {
   const { orders, menuItems, loading, setRefreshTrigger, refreshTrigger } =
@@ -15,7 +15,7 @@ const Preparing = () => {
       });
 
       if (response.data.success) {
-        console.log("Order status updated successfully");
+      
         // Use the setter function to update refreshTrigger
         setRefreshTrigger((prev) => prev + 1);
       } else {

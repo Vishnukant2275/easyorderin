@@ -9,244 +9,292 @@ const PaymentSection = ({
   setIsPaymentConfirmed,
   total,
   restaurantID,
+  userInfo, // Add userInfo prop to get name and mobile number
 }) => {
-  const [paymentQRCodes, setPaymentQRCodes] = useState([]);
+  const [loadingPayment, setLoadingPayment] = useState(false);
 
-  useEffect(() => {
-    fetchPaymentQRCodes();
-  }, []);
-
-  const fetchPaymentQRCodes = async () => {
+  // 🧾 Razorpay Payment Handler
+  const handleRazorpayPayment = async () => {
     try {
-      const response = await api.get(
-        `/restaurant/${restaurantID}/payment-qrcodes`
-      );
-      if (response.data.success) {
-        setPaymentQRCodes(response.data.qrCodes || []);
+      setLoadingPayment(true);
+
+      // 1️⃣ Create order on backend
+      const { data } = await api.post("/razorpay/create-order", {
+        amount: total,
+        currency: "INR",
+        receipt: `receipt_${Date.now()}`,
+      });
+
+      if (!data?.orderId) {
+        alert("Error creating Razorpay order");
+        setLoadingPayment(false);
+        return;
       }
+
+      // 2️⃣ Initialize Razorpay payment with actual user data
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: data.amount,
+        currency: data.currency,
+        name: "Restaurant Payment",
+        description: "Order Payment",
+        order_id: data.orderId,
+        handler: async function (response) {
+          
+          setIsPaymentConfirmed(true);
+          
+          // Optional: Send payment verification to backend
+          // await api.post("/razorpay/verify-payment", response);
+        },
+        prefill: {
+          name: userInfo?.name || "Customer",
+          email: "customer@example.com", // You might want to get this from userInfo too
+          contact: userInfo?.mobile || userInfo?.phone || "9999999999",
+        },
+        theme: {
+          color: "#F37254",
+        },
+        modal: {
+          ondismiss: function() {
+            setLoadingPayment(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (error) {
-      console.error("Error fetching payment QR codes:", error);
+      console.error("Error during Razorpay payment:", error);
+      alert("Payment failed. Please try again.");
+      setLoadingPayment(false);
     }
   };
 
-  const handlePaymentConfirmation = () => {
-    setIsPaymentConfirmed(true);
-    alert("Thank you! Your payment confirmation has been recorded.");
-  };
+  // Reset payment confirmation if method changes
+  useEffect(() => {
+    if (selectedPaymentMethod && isPaymentConfirmed) {
+      setIsPaymentConfirmed(false);
+    }
+  }, [selectedPaymentMethod]);
 
   return (
     <div className={styles.paymentSection}>
-      <h4 className={styles.paymentTitle}>Payment Method</h4>
-      <p className={styles.paymentSubtitle}>
-        Choose how you would like to pay for your order
-      </p>
-      
-      {/* Payment Instructions */}
-     <div className={styles.paymentInstructions}>
-  <div className={styles.instructionIcon}>⚠️</div>
-  <div className={styles.instructionContent}>
-    <div className={styles.instructionHeading}>Payment Verification Required</div>
-    <div className={styles.instructionText}>
-      Your order will be confirmed only after the payment is verified by the restaurant. 
-      Please keep your payment receipt ready for verification.
-    </div>
-  </div>
-</div>
-      
-      <div className={styles.paymentOptions}>
-        <label className={styles.paymentOption}>
-          <input
-            type="radio"
-            name="paymentMethod"
-            value="counter"
-            checked={selectedPaymentMethod === "counter"}
-            onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-            className={styles.radioInput}
-          />
-          <span className={styles.radioCustom}></span>
-          <div className={styles.optionContent}>
-            <span className={styles.optionTitle}>Pay at Counter</span>
-            <span className={styles.optionDescription}>
-              Pay now at the restaurant counter to start the preparation of your order
-            </span>
-          </div>
-        </label>
-
-        <label className={styles.paymentOption}>
-          <input
-            type="radio"
-            name="paymentMethod"
-            value="qr"
-            checked={selectedPaymentMethod === "qr"}
-            onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-            className={styles.radioInput}
-          />
-          <span className={styles.radioCustom}></span>
-          <div className={styles.optionContent}>
-            <span className={styles.optionTitle}>Pay Now with QR Code</span>
-            <span className={styles.optionDescription}>
-              Scan QR code to pay instantly using UPI
-            </span>
-          </div>
-        </label>
+      <div className={styles.sectionHeader}>
+        <h4 className={styles.paymentTitle}>Payment Method</h4>
+        <p className={styles.paymentSubtitle}>
+          Choose how you would like to pay for your order
+        </p>
       </div>
 
-      {/* QR Code Payment Section */}
-      {selectedPaymentMethod === "qr" && (
-        <div className={styles.qrPaymentSection}>
-          <div className={styles.qrPaymentHeader}>
-            <h5 className={styles.qrPaymentTitle}>Scan to Pay</h5>
-            <p className={styles.qrPaymentSubtitle}>
-              Use any UPI app to scan the QR code and complete your payment
-            </p>
+      {/* User Information Display */}
+      {userInfo && (
+        <div className={styles.userInfoDisplay}>
+          <div className={styles.userInfoHeader}>
+            <span className={styles.userInfoIcon}>👤</span>
+            <span className={styles.userInfoTitle}>Ordering as</span>
           </div>
-          
-          {/* QR Payment Instructions */}
-          <div className={styles.qrInstructions}>
-            <div className={styles.steps}>
-              <div className={styles.step}>
-                <span className={styles.stepNumber}>1</span>
-                <span className={styles.stepText}>Scan the QR code with your UPI app</span>
-              </div>
-              <div className={styles.step}>
-                <span className={styles.stepNumber}>2</span>
-                <span className={styles.stepText}>Enter the total amount: <strong>₹{total.toFixed(2)}</strong></span>
-              </div>
-              <div className={styles.step}>
-                <span className={styles.stepNumber}>3</span>
-                <span className={styles.stepText}>Complete the payment</span>
-              </div>
-              <div className={styles.step}>
-                <span className={styles.stepNumber}>4</span>
-                <span className={styles.stepText}>Click "I Have Paid" below</span>
-              </div>
+          <div className={styles.userInfoDetails}>
+            <div className={styles.userInfoItem}>
+              <span className={styles.userInfoLabel}>Name:</span>
+              <span className={styles.userInfoValue}>{userInfo.name}</span>
             </div>
-            <div className={styles.warningNote}>
-  <span className={styles.noteIcon}>⚠️</span>
-  <div className={styles.noteContent}>
-    <strong>Note:</strong> Order confirmation is subject to payment verification by the restaurant.
-  </div>
-</div>
-          </div>
-          
-          <div className={styles.paymentMethods}>
-            {paymentQRCodes.length > 0 ? (
-              <div className={styles.qrCodesGrid}>
-                {paymentQRCodes.map((qrCode) => (
-                  <div key={qrCode._id} className={styles.qrCodeItem}>
-                    <div className={styles.qrCodeHeader}>
-                      <span className={styles.paymentMethodName}>
-                        {qrCode.paymentMethod}
-                      </span>
-                      {qrCode.upiId && (
-                        <span className={styles.upiId}>UPI: {qrCode.upiId}</span>
-                      )}
-                    </div>
-                    
-                    <div className={styles.qrCodeImageContainer}>
-                      <img 
-                        src={qrCode.imageBase64} 
-                        alt={`${qrCode.paymentMethod} QR Code`}
-                        className={styles.qrCodeImage}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                      <div className={styles.qrCodeFallback}>
-                        <span>📷</span>
-                        <p>QR Code Image</p>
-                      </div>
-                    </div>
-                    
-                    {qrCode.note && (
-                      <p className={styles.qrCodeNote}>{qrCode.note}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className={styles.noQRCodes}>
-                <p>No payment QR codes are available at the moment. Please select the pay at counter option.</p>
-              </div>
-            )}
-          </div>
-
-          <div className={styles.paymentConfirmation}>
-            <label className={styles.paymentCheckbox}>
-              <input
-                type="checkbox"
-                checked={isPaymentConfirmed}
-                onChange={(e) => setIsPaymentConfirmed(e.target.checked)}
-                className={styles.checkboxInput}
-              />
-              <span className={styles.checkboxLabel}>
-                I have completed the payment via QR code
-              </span>
-            </label>
-            
-            <button
-              type="button"
-              className={styles.confirmPaymentButton}
-              onClick={handlePaymentConfirmation}
-              disabled={isPaymentConfirmed}
-            >
-              {isPaymentConfirmed ? "✅ Payment Confirmed" : "📱 I Have Paid"}
-            </button>
+            <div className={styles.userInfoItem}>
+              <span className={styles.userInfoLabel}>Mobile:</span>
+              <span className={styles.userInfoValue}>{userInfo.mobile || userInfo.phone}</span>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Pay at Counter Confirmation */}
-      {selectedPaymentMethod === "counter" && (
-        <div className={styles.counterPaymentSection}>
-          <div className={styles.counterPaymentInfo}>
-            <div className={styles.counterIcon}>💳</div>
-            <h5 className={styles.counterTitle}>Pay at Counter</h5>
-            <p className={styles.counterDescription}>
-              You can pay using cash, card, or UPI when you collect your order at the restaurant counter.
-            </p>
-            
-            {/* Counter Payment Instructions */}
-            <div className={styles.counterInstructions}>
-              <div className={styles.instructionSteps}>
-                <div className={styles.instructionStep}>
-                  <span className={styles.stepIndicator}>①</span>
-                  <span>Make the payment at counter</span>
+      {/* Payment Status Banner */}
+      {isPaymentConfirmed && (
+        <div className={styles.successBanner}>
+          <div className={styles.successIcon}>✅</div>
+          <div className={styles.successContent}>
+            <div className={styles.successTitle}>Payment Confirmed!</div>
+            <div className={styles.successText}>
+              Your payment of ₹{total.toFixed(2)} has been processed successfully. 
+              Click "Place Order" to complete your order.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Options */}
+      <div className={styles.paymentOptions}>
+        <label className={`${styles.paymentOption} ${isPaymentConfirmed ? styles.disabledOption : ''}`}>
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="razorpay"
+            checked={selectedPaymentMethod === "razorpay"}
+            onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+            className={styles.radioInput}
+            disabled={isPaymentConfirmed}
+          />
+          <span className={styles.radioCustom}></span>
+          <div className={styles.optionContent}>
+            <div className={styles.optionHeader}>
+              <span className={styles.optionTitle}>Pay Online</span>
+              <div className={styles.paymentBadge}>Recommended</div>
+            </div>
+            <span className={styles.optionDescription}>
+              Secure payment via UPI, Credit/Debit Cards, Net Banking
+            </span>
+            <div className={styles.paymentIcons}>
+              <span className={styles.paymentIcon}>💳</span>
+              <span className={styles.paymentIcon}>📱</span>
+              <span className={styles.paymentIcon}>🏦</span>
+            </div>
+          </div>
+          {isPaymentConfirmed && <div className={styles.disabledOverlay}></div>}
+        </label>
+      </div>
+
+      {/* Razorpay Payment Section */}
+      {selectedPaymentMethod === "razorpay" && !isPaymentConfirmed && (
+        <div className={styles.razorpaySection}>
+          <div className={styles.razorpayCard}>
+            <div className={styles.razorpayHeader}>
+              <div className={styles.razorpayIcon}>🔒</div>
+              <div className={styles.razorpayInfo}>
+                <h5 className={styles.razorpayTitle}>Secure Online Payment</h5>
+                <p className={styles.razorpaySubtitle}>
+                  Protected by Razorpay • PCI DSS Certified
+                </p>
+              </div>
+            </div>
+
+            {/* Order Summary */}
+            <div className={styles.orderSummary}>
+              <div className={styles.summaryRow}>
+                <span>Order Amount:</span>
+                <span>₹{total.toFixed(2)}</span>
+              </div>
+              <div className={styles.summaryRow}>
+                <span>Convenience Fee:</span>
+                <span className={styles.freeText}>FREE</span>
+              </div>
+              <div className={styles.summaryDivider}></div>
+              <div className={`${styles.summaryRow} ${styles.totalRow}`}>
+                <span>Total to Pay:</span>
+                <span className={styles.totalAmount}>₹{total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Customer Information Preview */}
+            {userInfo && (
+              <div className={styles.customerPreview}>
+                <div className={styles.customerPreviewTitle}>Customer Information</div>
+                <div className={styles.customerPreviewDetails}>
+                  <div className={styles.customerPreviewItem}>
+                    <span>Name:</span>
+                    <span>{userInfo.name}</span>
+                  </div>
+                  <div className={styles.customerPreviewItem}>
+                    <span>Mobile:</span>
+                    <span>{userInfo.mobile || userInfo.phone}</span>
+                  </div>
                 </div>
-                <div className={styles.instructionStep}>
-                  <span className={styles.stepIndicator}>②</span>
-                  <span>Place the order and Show your payment receipt to Manager </span>
+              </div>
+            )}
+
+            {/* Payment Steps */}
+            <div className={styles.paymentSteps}>
+              <div className={styles.step}>
+                <div className={styles.stepIndicator}>
+                  <span className={styles.stepNumber}>1</span>
                 </div>
-                <div className={styles.instructionStep}>
-                  <span className={styles.stepIndicator}>③</span>
-                  <span>Ask the manager to confirm your order</span>
-                </div>
-                <div className={styles.instructionStep}>
-                  <span className={styles.stepIndicator}>④</span>
-                  <span>Wait for order preparation</span>
+                <div className={styles.stepContent}>
+                  <div className={styles.stepTitle}>Initiate Payment</div>
+                  <div className={styles.stepDescription}>
+                    Click the payment button below
+                  </div>
                 </div>
               </div>
               
-              <div className={styles.importantNote}>
-                <strong>Important:</strong> Your order will be prepared after payment is done. 
-                Please proceed to the counter to pay and order collection.
+              <div className={styles.step}>
+                <div className={styles.stepIndicator}>
+                  <span className={styles.stepNumber}>2</span>
+                </div>
+                <div className={styles.stepContent}>
+                  <div className={styles.stepTitle}>Complete Payment</div>
+                  <div className={styles.stepDescription}>
+                    Your details will be pre-filled for faster checkout
+                  </div>
+                </div>
+              </div>
+              
+              <div className={styles.step}>
+                <div className={styles.stepIndicator}>
+                  <span className={styles.stepNumber}>3</span>
+                </div>
+                <div className={styles.stepContent}>
+                  <div className={styles.stepTitle}>Automatic Confirmation</div>
+                  <div className={styles.stepDescription}>
+                    Payment verified instantly
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Button */}
+            <div className={styles.paymentAction}>
+              <button
+                type="button"
+                onClick={handleRazorpayPayment}
+                className={styles.razorpayButton}
+                disabled={loadingPayment}
+              >
+                {loadingPayment ? (
+                  <>
+                    <div className={styles.spinner}></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.buttonIcon}>💳</div>
+                    <div className={styles.buttonContent}>
+                      <div className={styles.buttonPrimary}>Pay ₹{total.toFixed(2)}</div>
+                      <div className={styles.buttonSecondary}>
+                        {userInfo?.name ? `Pay as ${userInfo.name}` : 'Secure Payment • Razorpay'}
+                      </div>
+                    </div>
+                    <div className={styles.arrowIcon}>→</div>
+                  </>
+                )}
+              </button>
+              
+              <div className={styles.securityNote}>
+                <span className={styles.lockIcon}>🔒</span>
+                Your payment details are secured with 256-bit SSL encryption
               </div>
             </div>
           </div>
-          
-          <div className={styles.counterConfirmation}>
-            <label className={styles.paymentCheckbox}>
-              <input
-                type="checkbox"
-                checked={isPaymentConfirmed}
-                onChange={(e) => setIsPaymentConfirmed(e.target.checked)}
-                className={styles.checkboxInput}
-              />
-              <span className={styles.checkboxLabel}>
-                I understand that I will pay at the counter then my order preparation will be started 
-              </span>
-            </label>
+        </div>
+      )}
+
+      {/* Accepted Payment Methods */}
+      {selectedPaymentMethod === "razorpay" && !isPaymentConfirmed && (
+        <div className={styles.acceptedMethods}>
+          <div className={styles.methodsTitle}>We Accept</div>
+          <div className={styles.methodsGrid}>
+            <div className={styles.methodItem}>
+              <span className={styles.methodIcon}>📱</span>
+              <span>UPI</span>
+            </div>
+            <div className={styles.methodItem}>
+              <span className={styles.methodIcon}>💳</span>
+              <span>Cards</span>
+            </div>
+            <div className={styles.methodItem}>
+              <span className={styles.methodIcon}>🏦</span>
+              <span>Net Banking</span>
+            </div>
+            <div className={styles.methodItem}>
+              <span className={styles.methodIcon}>💰</span>
+              <span>Wallets</span>
+            </div>
           </div>
         </div>
       )}

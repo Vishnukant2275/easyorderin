@@ -37,7 +37,7 @@ const Payment = () => {
         withCredentials: true,
       });
 
-      console.log("QR Codes API Response:", res.data);
+      
 
       if (res.data?.success && Array.isArray(res.data.qrCodes)) {
         setPaymentQRCodes(res.data.qrCodes);

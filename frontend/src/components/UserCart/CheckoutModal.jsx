@@ -4,6 +4,7 @@ import UserInfoForm from "./UserInfoForm";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
+
 const OrderReview = ({ cartItems, total }) => {
   return (
     <div className={styles.orderReview}>
@@ -25,7 +26,13 @@ const OrderReview = ({ cartItems, total }) => {
   );
 };
 
-const ModalActions = ({ onCancel, onConfirm, isSubmitting, isFormValid }) => {
+const ModalActions = ({
+  onCancel,
+  onConfirm,
+  isSubmitting,
+  isFormValid,
+  isPaymentConfirmed,
+}) => {
   return (
     <div className={styles.modalActions}>
       <button
@@ -40,7 +47,7 @@ const ModalActions = ({ onCancel, onConfirm, isSubmitting, isFormValid }) => {
         type="button"
         className={styles.confirmButton}
         onClick={onConfirm}
-        disabled={!isFormValid || isSubmitting}
+        disabled={isSubmitting || !isFormValid || !isPaymentConfirmed}
       >
         {isSubmitting ? "Placing Order..." : "Place Order"}
       </button>
@@ -59,21 +66,20 @@ const CheckoutModal = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
+  const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
-  const { user: contextUser, isAuthenticated } = useUser(); // From your UserContext
+  const { user: contextUser, isAuthenticated } = useUser();
 
   // Extract user from session/localStorage on component mount
   useEffect(() => {
     const getUserFromSession = () => {
-      // Try multiple sources for user data
       if (contextUser && isAuthenticated) {
         setCurrentUser(contextUser);
         return;
       }
 
-      // Check localStorage
-      const storedUser = localStorage.getItem('currentUser');
+      const storedUser = localStorage.getItem("currentUser");
       if (storedUser) {
         try {
           setCurrentUser(JSON.parse(storedUser));
@@ -83,8 +89,7 @@ const CheckoutModal = ({
         }
       }
 
-      // Check sessionStorage
-      const sessionUser = sessionStorage.getItem('currentUser');
+      const sessionUser = sessionStorage.getItem("currentUser");
       if (sessionUser) {
         try {
           setCurrentUser(JSON.parse(sessionUser));
@@ -94,7 +99,7 @@ const CheckoutModal = ({
         }
       }
 
-      console.log("No user found in session");
+      setCurrentUser(null);
     };
 
     getUserFromSession();
@@ -103,75 +108,94 @@ const CheckoutModal = ({
   const handleFormSubmit = async (
     userInfo,
     selectedPaymentMethod,
-    isPaymentConfirmed
+    paymentConfirmed
   ) => {
     setIsSubmitting(true);
 
     try {
-      // Use user from session OR from form if guest checkout
-      const userToUse = currentUser || userInfo;
-      
-      if (!userToUse || !userToUse._id) {
-        throw new Error("User not authenticated. Please log in.");
-      }
-
-      // Prepare order data according to new schema
+      // Prepare order data for the new merged route
       const menuItems = cartItems.map((item) => ({
-        name: item.name,           // Store name directly
-        price: item.price,         // Store price directly
+        menuId: item.id,
         quantity: item.quantity,
-        notes: item.notes || specialInstructions || "",
-        menuId: item.id,           // Optional: keep reference
+        notes: item.notes || "",
       }));
 
       const orderData = {
-        restaurantId: restaurantID,
-        tableNumber: parseInt(tableNumber),
+        name: userInfo.name,
+        phone: userInfo.mobile || userInfo.phone,
         menuItems: menuItems,
-        totalPrice: total,
         specialInstructions: specialInstructions || "",
         paymentMethod: selectedPaymentMethod,
-        customerName: userToUse.name || userToUse.username || "Guest",
-        customerPhone: userToUse.phone || userToUse.mobile || "",
-        // Note: isPaid field will be handled by the backend based on payment method
       };
 
-      console.log("Sending order data:", orderData);
-      console.log("Using user ID:", userToUse._id);
+   
 
-      // Call the API with the authenticated user's ID
+      // Call the new merged API route
       const response = await api.post(
-        `/user/${userToUse._id}/orders`,
+        `/restaurant/${restaurantID}/table/${tableNumber}/placeOrder`,
         orderData
       );
 
       if (response.data.success) {
         // Clear cart and show success message
-        if (selectedPaymentMethod === "qr") {
+        if (selectedPaymentMethod === "razorpay") {
           alert("Order placed successfully! Your payment has been confirmed.");
         } else {
           alert(
             "Order placed successfully! Please pay at the counter when collecting your order."
           );
         }
+
         handleCloseModal();
 
         // Navigate to orders page
-        navigate(`/restaurant/${restaurantID}/table/${tableNumber}/orders`);
-        
+        window.location.href = `/restaurant/${restaurantID}/table/${tableNumber}/orders`;
+
         // Clear cart from localStorage
         localStorage.removeItem(`cart_${restaurantID}_${tableNumber}`);
-        
+
+        // Store user info in localStorage for future orders
+        if (response.data.user) {
+          localStorage.setItem(
+            "currentUser",
+            JSON.stringify({
+              _id: response.data.user._id,
+              name: response.data.user.name,
+              phone: response.data.user.phone,
+            })
+          );
+        }
       } else {
-        alert("Failed to place order: " + (response.data.error || response.data.message));
+        alert(
+          "Failed to place order: " +
+            (response.data.message || response.data.error)
+        );
       }
     } catch (error) {
       console.error("Error placing order:", error);
-      if (error.response?.status === 401) {
-        alert("Please log in to place an order.");
-        navigate('/login');
+
+      // Handle specific error cases
+      if (error.response?.status === 409) {
+        alert(
+          "This phone number is already registered. Please use a different number or contact support."
+        );
+      } else if (error.response?.status === 400) {
+        alert(
+          "Invalid data provided: " +
+            (error.response.data.message || "Please check your information")
+        );
+      } else if (error.response?.status === 403) {
+        alert(
+          "Cannot place order: " +
+            (error.response.data.message || "Table is not available")
+        );
+      } else if (error.response?.status === 404) {
+        alert("Restaurant or table not found. Please try again.");
       } else {
-        alert("Failed to place order. Please try again. Error: " + (error.response?.data?.error || error.message));
+        alert(
+          "Failed to place order. Please try again. Error: " +
+            (error.response?.data?.message || error.message)
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -179,45 +203,16 @@ const CheckoutModal = ({
   };
 
   const handleFormValidityChange = (isValid) => {
-    // If user is authenticated, form is always valid
-    // If guest, depend on form validation
-    setIsFormValid(currentUser ? true : isValid);
+    // Form is valid if we have user info (from context or form) and payment is confirmed
+    setIsFormValid(isValid);
   };
 
-  // Show login prompt if no user session
-  if (!showUserForm) return null;
+  // Handle payment confirmation state from UserInfoForm
+  const handlePaymentConfirmationChange = (confirmed) => {
+    setIsPaymentConfirmed(confirmed);
+  };
 
-  if (!currentUser && !isAuthenticated) {
-    return (
-      <div className={styles.modalOverlay}>
-        <div className={styles.modalContent}>
-          <div className={styles.modalHeader}>
-            <h2 className={styles.modalTitle}>Authentication Required</h2>
-            <p className={styles.modalSubtitle}>
-              Please log in to place an order
-            </p>
-          </div>
-          <div className={styles.authPrompt}>
-            <p>You need to be logged in to complete your order.</p>
-            <div className={styles.modalActions}>
-              <button
-                className={styles.cancelButton}
-                onClick={handleCloseModal}
-              >
-                Cancel
-              </button>
-              <button
-                className={styles.confirmButton}
-                onClick={() => navigate(`/restaurant/${restaurantID}/table/${tableNumber}/account`)}
-              >
-                Go to Login
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!showUserForm) return null;
 
   return (
     <div className={styles.modalOverlay}>
@@ -225,10 +220,9 @@ const CheckoutModal = ({
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Complete Your Order</h2>
           <p className={styles.modalSubtitle}>
-            {currentUser 
-              ? `Ordering as ${currentUser.name || currentUser.username}`
-              : "Please provide your details to place the order"
-            }
+            {currentUser
+              ? `Ordering as ${currentUser.name}`
+              : "Please provide your details to place the order"}
           </p>
         </div>
 
@@ -241,7 +235,8 @@ const CheckoutModal = ({
           onClose={handleCloseModal}
           onSubmit={handleFormSubmit}
           onFormValidityChange={handleFormValidityChange}
-          currentUser={currentUser} // Pass user data to form
+          onPaymentConfirmationChange={handlePaymentConfirmationChange}
+          currentUser={currentUser}
         >
           {(formData) => (
             <>
@@ -251,6 +246,7 @@ const CheckoutModal = ({
                 onConfirm={() => formData.handleSubmit()}
                 isSubmitting={isSubmitting}
                 isFormValid={isFormValid}
+                isPaymentConfirmed={isPaymentConfirmed}
               />
             </>
           )}

@@ -733,16 +733,29 @@ router.delete("/delete-paymentqr/:qrId", async (req, res) => {
     res.status(500).json({ error: "Server error while deleting QR code" });
   }
 });
-
-//placing orders
-router.post(
-  "/:restaurantID/table/:tableNumber/placeOrder",
-  async (req, res) => {
+// ✅ Place order for a specific restaurant and table
+router.post("/:restaurantID/table/:tableNumber/placeOrder",  async (req, res) => {
     try {
       const { restaurantID, tableNumber } = req.params;
-      const { menuItems } = req.body; // array of { menuId, quantity, notes }
-      const userId = req.session?.user?.id;
-      // 1️⃣ Validate restaurant
+      const { menuItems, name, phone, specialInstructions, paymentMethod } =
+        req.body;
+
+      // 1️⃣ Validate required fields
+      if (!name || !phone) {
+        return res.status(400).json({
+          success: false,
+          message: "Name and phone are required fields",
+        });
+      }
+
+      if (!menuItems || !Array.isArray(menuItems) || menuItems.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Menu items are required and should be a non-empty array",
+        });
+      }
+
+      // 2️⃣ Validate restaurant
       const restaurant = await Restaurant.findById(restaurantID);
       if (!restaurant) {
         return res.status(404).json({
@@ -751,7 +764,7 @@ router.post(
         });
       }
 
-      // 2️⃣ Validate tables record
+      // 3️⃣ Validate tables record
       const tablesData = await Tables.findOne({ restaurantId: restaurantID });
       if (!tablesData) {
         return res.status(404).json({
@@ -760,7 +773,7 @@ router.post(
         });
       }
 
-      // 3️⃣ Check if the table exists
+      // 4️⃣ Check if the table exists
       const table = tablesData.tables.find(
         (t) => t.tableNumber === parseInt(tableNumber)
       );
@@ -786,7 +799,7 @@ router.post(
         });
       }
 
-      // 4️⃣ Validate and fetch menu data
+      // 5️⃣ Validate and fetch menu data
       const menu = await Menu.findOne({ restaurant: restaurantID });
       if (!menu) {
         return res.status(404).json({
@@ -795,12 +808,12 @@ router.post(
         });
       }
 
-      // 5️⃣ Validate each item and calculate total price
+      // 6️⃣ Validate each item and calculate total price
       let totalPrice = 0;
       const validatedItems = [];
 
       for (const item of menuItems) {
-        const menuItem = menu.items.id(item.menuId); // find subdocument by _id
+        const menuItem = menu.items.id(item.menuId);
         if (!menuItem || !menuItem.isAvailable) {
           return res.status(400).json({
             success: false,
@@ -812,43 +825,134 @@ router.post(
         totalPrice += menuItem.price * quantity;
 
         validatedItems.push({
-          menuId: item.menuId,
+          name: menuItem.name,
+          price: menuItem.price,
           quantity,
           notes: item.notes || "",
+          menuId: item.menuId,
         });
       }
 
-      // 6️⃣ Create new order
+      // 7️⃣ Find or create user
+      let user;
+      const existingUser = await User.findOne({ phone });
+if (existingUser) {
+  // Override the existing user's name
+  existingUser.name = name.trim();
+
+  await existingUser.save();
+
+  user = existingUser;
+  console.log(`Updated existing user: ${user.name} (${user.phone})`);
+
+} else {
+  // Create new user
+  try {
+    user = new User({
+      name: name.trim(),
+      phone: phone.trim(),
+    });
+    await user.save();
+    console.log(`Created new user: ${user.name} (${user.phone})`);
+  } catch (userError) {
+    if (userError.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Phone number already registered with another user",
+      });
+    }
+    throw userError;
+  }
+}
+
+      // 8️⃣ Create new order
       const newOrder = await Order.create({
         restaurantId: restaurantID,
         menuItems: validatedItems,
-        tableNumber: tableNumber,
-        userId,
+        tableNumber: parseInt(tableNumber),
+        userId: user._id,
+        customerName: user.name,
+        customerPhone: user.phone,
         totalPrice,
+        specialInstructions: specialInstructions || "",
+        paymentMethod: paymentMethod || "counter",
         status: "pending",
       });
-      await User.findByIdAndUpdate(userId, {
+
+      // 9️⃣ Update user's order history
+      await User.findByIdAndUpdate(user._id, {
         $push: { orderHistory: newOrder._id },
       });
+      // 1️⃣1️⃣ Create session for the user (auto-login after order placement)
+      req.session.user = {
+        id: user._id.toString(),
+        phone: user.phone,
+        name: user.name,
+        email: user.email || "",
+        createdAt: new Date(),
+      };
 
-      // 7️⃣ Update table (mark occupied and link currentOrder)
+      // Save session explicitly
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error("Error saving session:", err);
+            reject(err);
+          } else {
+            console.log("Session created for user:", req.session.user);
+            resolve();
+          }
+        });
+      });
 
-      table.currentOrder = newOrder._id;
-
-      await tablesData.save();
-
-      // ✅ 8️⃣ Respond success
+      // ✅ Respond success
       return res.status(201).json({
         success: true,
         message: "Order placed successfully",
-        order: newOrder,
+        order: {
+          _id: newOrder._id,
+          restaurantId: newOrder.restaurantId,
+          tableNumber: newOrder.tableNumber,
+          customerName: newOrder.customerName,
+          customerPhone: newOrder.customerPhone,
+          menuItems: newOrder.menuItems,
+          totalPrice: newOrder.totalPrice,
+          specialInstructions: newOrder.specialInstructions,
+          paymentMethod: newOrder.paymentMethod,
+          status: newOrder.status,
+          createdAt: newOrder.createdAt,
+        },
+        user: {
+          _id: user._id,
+          name: user.name,
+          phone: user.phone,
+          email: user.email,
+          isNew: !existingUser, // Indicate if user was newly created
+        },
         table: {
           tableNumber: table.tableNumber,
           status: table.status,
         },
+        sessionCreated: true, // Indicate that session was created
       });
     } catch (error) {
-      console.error("Error placing order:", error);
+      console.error("Error in place order:", error);
+
+      if (error.name === "ValidationError") {
+        return res.status(400).json({
+          success: false,
+          message: "Validation error",
+          error: error.message,
+        });
+      }
+
+      if (error.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message: "Duplicate phone number detected",
+        });
+      }
+
       return res.status(500).json({
         success: false,
         message: "Internal server error",
@@ -857,7 +961,6 @@ router.post(
     }
   }
 );
-
 router.post("/register", upload.single("logoImage"), async (req, res) => {
   try {
     console.log("req.body:", req.body);

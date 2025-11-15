@@ -1,206 +1,119 @@
-import React, { useState, useEffect, useImperativeHandle, forwardRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import { useUser } from "../../context/UserContext";
 import styles from "./UserCart.module.css";
 import PaymentSection from "./PaymentSection";
 import api from "../../services/api";
 
-const UserInfoForm = forwardRef(({ 
-  restaurantID, 
-  tableNumber, 
-  cartItems, 
-  total, 
-  specialInstructions, 
-  onClose,
-  onSubmit,
-  onFormValidityChange,
-  children 
-}, ref) => {
-  const { user, isAuthenticated, sendOtp, verifyOtp, checkAuthStatus } = useUser();
-  
-  const [userInfo, setUserInfo] = useState({
-    name: "",
-    mobile: "",
-    otp: "",
-  });
-  
-  const [formErrors, setFormErrors] = useState({});
-  const [showOtpSection, setShowOtpSection] = useState(false);
-  const [isOtpVerified, setIsOtpVerified] = useState(false);
-  const [showPaymentSection, setShowPaymentSection] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
-  const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [otpMessage, setOtpMessage] = useState(null);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [otpTimer, setOtpTimer] = useState(0);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
+const UserInfoForm = forwardRef(
+  (
+    {
+      restaurantID,
+      tableNumber,
+      cartItems,
+      total,
+      specialInstructions,
+      onClose,
+      onSubmit,
+      onFormValidityChange,
+      onPaymentConfirmationChange, // Add this new prop
+      currentUser, // Pass current user from parent
+      children,
+    },
+    ref
+  ) => {
+    const { user: contextUser, isAuthenticated } = useUser();
 
-  // Check session on component mount
-  useEffect(() => {
-    checkUserSession();
-  }, []);
+    const [userInfo, setUserInfo] = useState({
+      name: "",
+      mobile: "",
+    });
 
-  const checkUserSession = async () => {
-    setIsCheckingSession(true);
-    try {
-      // Check if user is authenticated via session
-      await checkAuthStatus();
-      
-      // If user is authenticated, auto-fill their info
-      if (isAuthenticated && user) {
+    const [formErrors, setFormErrors] = useState({});
+    const [showPaymentSection, setShowPaymentSection] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+    const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isBasicInfoComplete, setIsBasicInfoComplete] = useState(false);
+
+    // Initialize form with current user data if available
+    useEffect(() => {
+      if (currentUser) {
         setUserInfo({
-          name: user.name || "",
-          mobile: user.phone || "",
-          otp: "",
+          name: currentUser.name || "",
+          mobile: currentUser.phone || currentUser.mobile || "",
         });
-        setIsOtpVerified(true);
+        setIsBasicInfoComplete(true);
+        setShowPaymentSection(true);
+      } else if (isAuthenticated && contextUser) {
+        setUserInfo({
+          name: contextUser.name || "",
+          mobile: contextUser.phone || contextUser.mobile || "",
+        });
+        setIsBasicInfoComplete(true);
         setShowPaymentSection(true);
       }
-    } catch (error) {
-      console.error("Error checking user session:", error);
-    } finally {
-      setIsCheckingSession(false);
-    }
-  };
+    }, [currentUser, isAuthenticated, contextUser]);
 
-  // Calculate form validity
-  const isFormValid = (isAuthenticated || isOtpVerified) && 
-    selectedPaymentMethod && 
-    isPaymentConfirmed;
+    // Check if basic info is complete and enable payment section
+    useEffect(() => {
+      const basicInfoComplete =
+        userInfo.name.trim() && userInfo.mobile.trim().length === 10;
+      setIsBasicInfoComplete(basicInfoComplete);
 
-  // Notify parent about form validity changes
-  useEffect(() => {
-    onFormValidityChange && onFormValidityChange(isFormValid);
-  }, [isFormValid, onFormValidityChange]);
-
-  const handleUserInfoChange = (e) => {
-    const { name, value } = e.target;
-
-    if (name === "mobile" || name === "otp") {
-      const numbersOnly = value.replace(/[^0-9]/g, "");
-      setUserInfo((prev) => ({
-        ...prev,
-        [name]: numbersOnly,
-      }));
-    } else {
-      setUserInfo((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-
-    if (formErrors[name]) {
-      setFormErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-
-    if (name === "mobile" && otpMessage) {
-      setOtpMessage(null);
-      setShowOtpSection(false);
-      setIsOtpVerified(false);
-      setShowPaymentSection(false);
-      setIsPaymentConfirmed(false);
-      setUserInfo((prev) => ({ ...prev, otp: "" }));
-    }
-  };
-
-  const handleSendOtp = async () => {
-    if (!userInfo.mobile || userInfo.mobile.length !== 10) {
-      setFormErrors((prev) => ({
-        ...prev,
-        mobile: "Please enter a valid 10-digit mobile number",
-      }));
-      return;
-    }
-
-    setIsSendingOtp(true);
-    setOtpMessage(null);
-
-    try {
-      const result = await sendOtp(userInfo.mobile);
-      if (result.success) {
-        setOtpMessage({ type: "success", text: "OTP sent successfully!" });
-        setShowOtpSection(true);
-        startOtpTimer();
-      } else {
-        setOtpMessage({
-          type: "error",
-          text: result.error || "Failed to send OTP",
-        });
-      }
-    } catch (error) {
-      setOtpMessage({
-        type: "error",
-        text: "Failed to send OTP. Please try again.",
-      });
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!userInfo.otp || userInfo.otp.length !== 6) {
-      setFormErrors((prev) => ({
-        ...prev,
-        otp: "Please enter a valid 6-digit OTP",
-      }));
-      return;
-    }
-
-    setIsVerifyingOtp(true);
-    setOtpMessage(null);
-
-    try {
-      const result = await verifyOtp(userInfo.mobile, userInfo.otp);
-      if (result.success) {
-        setOtpMessage({ type: "success", text: "OTP verified successfully!" });
-        setIsOtpVerified(true);
+      if (basicInfoComplete && !showPaymentSection) {
         setShowPaymentSection(true);
-        
-        // Update user info with verified data
-        if (result.user) {
-          setUserInfo({
-            name: result.user.name || userInfo.name,
-            mobile: result.user.phone || userInfo.mobile,
-            otp: "",
-          });
-        }
-      } else {
-        setOtpMessage({
-          type: "error",
-          text: result.error || "Invalid OTP",
-        });
       }
-    } catch (error) {
-      setOtpMessage({
-        type: "error",
-        text: "Failed to verify OTP. Please try again.",
-      });
-    } finally {
-      setIsVerifyingOtp(false);
-    }
-  };
+    }, [userInfo.name, userInfo.mobile, showPaymentSection]);
 
-  const startOtpTimer = () => {
-    setOtpTimer(60);
-    const timer = setInterval(() => {
-      setOtpTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+    // Calculate form validity
+    const isFormValid =
+      isBasicInfoComplete && selectedPaymentMethod && isPaymentConfirmed;
 
-  const validateForm = () => {
-    const errors = {};
+    // Notify parent about form validity changes
+    useEffect(() => {
+      onFormValidityChange && onFormValidityChange(isFormValid);
+    }, [isFormValid, onFormValidityChange]);
 
-    if (!isAuthenticated && !isOtpVerified) {
+    // Notify parent about payment confirmation changes
+    useEffect(() => {
+      onPaymentConfirmationChange &&
+        onPaymentConfirmationChange(isPaymentConfirmed);
+    }, [isPaymentConfirmed, onPaymentConfirmationChange]);
+
+    const handleUserInfoChange = (e) => {
+      const { name, value } = e.target;
+
+      if (name === "mobile") {
+        // Allow only numbers for mobile
+        const numbersOnly = value.replace(/[^0-9]/g, "");
+        setUserInfo((prev) => ({
+          ...prev,
+          [name]: numbersOnly,
+        }));
+      } else {
+        setUserInfo((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+
+      // Clear error when user starts typing
+      if (formErrors[name]) {
+        setFormErrors((prev) => ({
+          ...prev,
+          [name]: "",
+        }));
+      }
+    };
+
+    const validateForm = () => {
+      const errors = {};
+
       if (!userInfo.name.trim()) {
         errors.name = "Name is required";
       } else if (userInfo.name.trim().length < 2) {
@@ -212,100 +125,153 @@ const UserInfoForm = forwardRef(({
       } else if (!/^\d{10}$/.test(userInfo.mobile.trim())) {
         errors.mobile = "Please enter a valid 10-digit mobile number";
       }
-    }
 
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+      if (!selectedPaymentMethod) {
+        errors.payment = "Please select a payment method";
+      }
 
-  const handleSubmit = async () => {
-    if (!selectedPaymentMethod) {
-      alert("Please select a payment method.");
-      return;
-    }
+      if (!isPaymentConfirmed) {
+        errors.payment = "Please confirm your payment";
+      }
 
-    if (selectedPaymentMethod === "qr" && !isPaymentConfirmed) {
-      alert("Please confirm your payment before placing the order.");
-      return;
-    }
-
-    if (selectedPaymentMethod === "counter" && !isPaymentConfirmed) {
-      alert("Please confirm that you understand you'll pay at the counter.");
-      return;
-    }
-
-    if (!isAuthenticated && !isOtpVerified && !validateForm()) {
-      return;
-    }
-
-    // Prepare final user data - use session data if available, otherwise use form data
-    const finalUserInfo = {
-      name: isAuthenticated ? user.name : userInfo.name,
-      mobile: isAuthenticated ? user.phone : userInfo.mobile,
+      setFormErrors(errors);
+      return Object.keys(errors).length === 0;
     };
 
-    // Call parent submit handler
-    await onSubmit(finalUserInfo, selectedPaymentMethod, isPaymentConfirmed);
-  };
+    const handleSubmit = async () => {
+      if (!validateForm()) {
+        return;
+      }
 
-  // Expose submit function to parent
-  useImperativeHandle(ref, () => ({
-    handleSubmit
-  }));
+      if (!selectedPaymentMethod) {
+        alert("Please select a payment method.");
+        return;
+      }
 
-  // Show loading while checking session
-  if (isCheckingSession) {
+      if (selectedPaymentMethod === "razorpay" && !isPaymentConfirmed) {
+        alert("Please complete your payment before placing the order.");
+        return;
+      }
+
+      if (selectedPaymentMethod === "counter" && !isPaymentConfirmed) {
+        alert("Please confirm that you understand you'll pay at the counter.");
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      try {
+        // Create user object from form data
+        const guestUser = {
+          _id: `guest_${Date.now()}`,
+          name: userInfo.name.trim(),
+          phone: userInfo.mobile.trim(),
+          isGuest: true,
+        };
+
+        // Call parent submit handler
+        await onSubmit(guestUser, selectedPaymentMethod, isPaymentConfirmed);
+      } catch (error) {
+        console.error("Error in form submission:", error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    // Expose submit function to parent
+    useImperativeHandle(ref, () => ({
+      handleSubmit,
+    }));
+
+    const handleEditInfo = () => {
+      // Reset all states to show the form again
+      setIsBasicInfoComplete(false);
+      setShowPaymentSection(false);
+      setSelectedPaymentMethod("");
+      setIsPaymentConfirmed(false);
+      setFormErrors({});
+
+      // Clear the mobile number to prevent auto-rendering
+      setUserInfo({
+        name: userInfo.name, // Keep the name so user doesn't have to retype it
+        mobile: "", // Clear mobile to prevent auto-completion
+      });
+
+      // Also notify parent that form is no longer valid
+      onFormValidityChange && onFormValidityChange(false);
+      onPaymentConfirmationChange && onPaymentConfirmationChange(false);
+    };
+
+    // Handle payment method change
+    const handlePaymentMethodChange = (method) => {
+      setSelectedPaymentMethod(method);
+      // Reset payment confirmation when payment method changes
+      setIsPaymentConfirmed(false);
+    };
+
+    // Handle payment confirmation change
+    const handlePaymentConfirmationChange = (confirmed) => {
+      setIsPaymentConfirmed(confirmed);
+    };
+
     return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.loadingSpinner}>Checking session...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.userForm}>
-      {/* Show user status */}
-      {isAuthenticated && (
-        <div className={styles.userStatus}>
-          <div className={styles.authenticatedBadge}>
-            ✅ Logged in as: {user?.name} ({user?.phone})
+      <div className={styles.userForm}>
+        {/* Show user info card when basic info is complete */}
+        {isBasicInfoComplete && (
+          <div className={styles.userInfoCard}>
+            <div className={styles.userInfoHeader}>
+              <h4 className={styles.userInfoTitle}>Your Information</h4>
+              <button
+                type="button"
+                className={styles.editButton}
+                onClick={handleEditInfo}
+                disabled={isSubmitting}
+              >
+                Edit
+              </button>
+            </div>
+            <div className={styles.userInfoDetails}>
+              <div className={styles.userInfoItem}>
+                <span className={styles.userInfoLabel}>Name:</span>
+                <span className={styles.userInfoValue}>{userInfo.name}</span>
+              </div>
+              <div className={styles.userInfoItem}>
+                <span className={styles.userInfoLabel}>Mobile:</span>
+                <span className={styles.userInfoValue}>{userInfo.mobile}</span>
+              </div>
+            </div>
           </div>
-          <p className={styles.authenticatedText}>
-            Your information is automatically filled from your login details.
-          </p>
-        </div>
-      )}
+        )}
 
-      {/* User Info Fields - Only show if not authenticated */}
-      {!isAuthenticated && (
-        <>
-          <div className={styles.formGroup}>
-            <label htmlFor="name" className={styles.formLabel}>
-              Full Name *
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              className={`${styles.formInput} ${
-                formErrors.name ? styles.inputError : ""
-              }`}
-              placeholder="Enter your full name"
-              value={userInfo.name}
-              onChange={handleUserInfoChange}
-              disabled={isOtpVerified || isSubmitting}
-            />
-            {formErrors.name && (
-              <span className={styles.errorText}>{formErrors.name}</span>
-            )}
-          </div>
+        {/* User Info Fields - Only show when basic info is not complete */}
+        {!isBasicInfoComplete && (
+          <>
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.formLabel}>
+                Full Name *
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                className={`${styles.formInput} ${
+                  formErrors.name ? styles.inputError : ""
+                }`}
+                placeholder="Enter your full name"
+                value={userInfo.name}
+                onChange={handleUserInfoChange}
+                disabled={isSubmitting}
+              />
+              {formErrors.name && (
+                <span className={styles.errorText}>{formErrors.name}</span>
+              )}
+            </div>
 
-          {/* Mobile Number Field */}
-          <div className={styles.formGroup}>
-            <label htmlFor="mobile" className={styles.formLabel}>
-              Mobile Number *
-            </label>
-            <div className={styles.mobileInputGroup}>
+            {/* Mobile Number Field */}
+            <div className={styles.formGroup}>
+              <label htmlFor="mobile" className={styles.formLabel}>
+                Mobile Number *
+              </label>
               <input
                 type="tel"
                 id="mobile"
@@ -317,135 +283,68 @@ const UserInfoForm = forwardRef(({
                 value={userInfo.mobile}
                 onChange={handleUserInfoChange}
                 maxLength="10"
-                disabled={isOtpVerified || isSendingOtp || isSubmitting}
+                disabled={isSubmitting}
               />
-              {!isOtpVerified && (
+              {formErrors.mobile && (
+                <span className={styles.errorText}>{formErrors.mobile}</span>
+              )}
+              <small className={styles.helperText}>
+                We'll use this to notify you about your order status
+              </small>
+            </div>
+
+            {/* Continue Button to manually proceed to payment */}
+            {userInfo.name.trim() && userInfo.mobile.trim().length === 10 && (
+              <div className={styles.continueButtonContainer}>
                 <button
                   type="button"
-                  className={styles.sendOtpButton}
-                  onClick={handleSendOtp}
-                  disabled={
-                    !userInfo.mobile ||
-                    userInfo.mobile.length !== 10 ||
-                    isOtpVerified ||
-                    isSendingOtp ||
-                    isSubmitting
-                  }
+                  className={styles.continueButton}
+                  onClick={() => {
+                    setIsBasicInfoComplete(true);
+                    setShowPaymentSection(true);
+                  }}
+                  disabled={isSubmitting}
                 >
-                  {isSendingOtp ? "Sending..." : "Send OTP"}
+                  Continue to Payment
                 </button>
-              )}
-            </div>
-            {formErrors.mobile && (
-              <span className={styles.errorText}>{formErrors.mobile}</span>
+              </div>
             )}
+          </>
+        )}
+
+        {/* Show payment section once basic info is complete */}
+        {showPaymentSection && isBasicInfoComplete && (
+          <>
+            <div className={styles.sectionDivider}></div>
+            <PaymentSection
+              selectedPaymentMethod={selectedPaymentMethod}
+              setSelectedPaymentMethod={handlePaymentMethodChange}
+              isPaymentConfirmed={isPaymentConfirmed}
+              setIsPaymentConfirmed={handlePaymentConfirmationChange}
+              total={total}
+              restaurantID={restaurantID}
+              userInfo={userInfo} // Add this line to pass user information
+            />
+          </>
+        )}
+
+        {/* Show payment errors if any */}
+        {formErrors.payment && (
+          <div className={styles.paymentError}>
+            <span className={styles.errorText}>{formErrors.payment}</span>
           </div>
+        )}
 
-          {/* OTP Section */}
-          {showOtpSection && !isOtpVerified && (
-            <div className={styles.otpSection}>
-              <div className={styles.formGroup}>
-                <label htmlFor="otp" className={styles.formLabel}>
-                  Enter OTP *
-                </label>
-                <div className={styles.otpInputGroup}>
-                  <input
-                    type="text"
-                    id="otp"
-                    name="otp"
-                    className={`${styles.formInput} ${
-                      formErrors.otp ? styles.inputError : ""
-                    }`}
-                    placeholder="Enter 6-digit OTP"
-                    value={userInfo.otp}
-                    onChange={handleUserInfoChange}
-                    maxLength="6"
-                    disabled={isOtpVerified || isSubmitting}
-                  />
-                  <button
-                    type="button"
-                    className={styles.verifyOtpButton}
-                    onClick={handleVerifyOtp}
-                    disabled={
-                      !userInfo.otp ||
-                      userInfo.otp.length !== 6 ||
-                      isVerifyingOtp ||
-                      isOtpVerified ||
-                      isSubmitting
-                    }
-                  >
-                    {isVerifyingOtp ? "Verifying..." : "Verify OTP"}
-                  </button>
-                </div>
-                {formErrors.otp && (
-                  <span className={styles.errorText}>{formErrors.otp}</span>
-                )}
-                {otpMessage && (
-                  <span
-                    className={
-                      otpMessage.type === "success"
-                        ? styles.otpSuccess
-                        : styles.otpError
-                    }
-                  >
-                    {otpMessage.text}
-                  </span>
-                )}
-                <div className={styles.otpResend}>
-                  <span className={styles.otpTimer}>
-                    {otpTimer > 0
-                      ? `Resend OTP in ${otpTimer}s`
-                      : "Didn't receive OTP?"}
-                  </span>
-                  {otpTimer === 0 && (
-                    <button
-                      type="button"
-                      className={styles.resendOtpButton}
-                      onClick={handleSendOtp}
-                      disabled={isSendingOtp || isSubmitting}
-                    >
-                      {isSendingOtp ? "Sending..." : "Resend OTP"}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* OTP Verified Message */}
-          {isOtpVerified && !isAuthenticated && (
-            <div className={styles.otpVerified}>
-              <div className={styles.verifiedBadge}>
-                ✅ Mobile number verified
-              </div>
-              <p className={styles.verifiedText}>
-                Your mobile number {userInfo.mobile} has been successfully verified.
-              </p>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Payment Section - Show when authenticated or OTP verified */}
-      {(isAuthenticated || isOtpVerified) && (
-        <PaymentSection
-          selectedPaymentMethod={selectedPaymentMethod}
-          setSelectedPaymentMethod={setSelectedPaymentMethod}
-          isPaymentConfirmed={isPaymentConfirmed}
-          setIsPaymentConfirmed={setIsPaymentConfirmed}
-          total={total}
-          restaurantID={restaurantID}
-        />
-      )}
-
-      {/* Children (Order Review and Actions) */}
-      {children && children({
-        isSubmitting,
-        userInfo: isAuthenticated ? user : userInfo,
-        handleSubmit
-      })}
-    </div>
-  );
-});
+        {/* Children (Order Review and Actions) */}
+        {children &&
+          children({
+            isSubmitting,
+            userInfo: userInfo,
+            handleSubmit,
+          })}
+      </div>
+    );
+  }
+);
 
 export default UserInfoForm;

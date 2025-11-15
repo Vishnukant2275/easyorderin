@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import api from "../services/api";
-import { useRestaurant } from "../context/RestaurantContext";
+import api from "../../services/api";
+import { useRestaurant } from "../../context/RestaurantContext";
 
 const Table = () => {
   const { table, setTable, setRefreshTrigger, restaurant } = useRestaurant();
@@ -85,7 +85,7 @@ const Table = () => {
   };
   const handleViewOrders = (tableItem) => {
     alert(`Viewing current orders for Table ${tableItem.tableNumber}`);
-    console.log("tableItem:", tableItem);
+   
   };
 
   const downloadQRCode = (tableId, tableNumber) => {
@@ -341,7 +341,7 @@ const Table = () => {
                     >
                       <QRCodeSVG
                         ref={(el) => (qrRefs.current[tableItem._id] = el)}
-                        value={`   http://10.192.254.32:5173/restaurant/${restaurant._id}/table/${tableItem.tableNumber}/account`}
+                        value={`     http://10.143.23.32:5173/restaurant/${restaurant._id}/table/${tableItem.tableNumber}/getMenu`}
                         size={qrSize}
                         level="H"
                         includeMargin={true}

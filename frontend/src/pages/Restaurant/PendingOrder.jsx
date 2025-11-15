@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useRestaurant } from "../context/RestaurantContext";
-import api from "../services/api";
+import { useRestaurant } from "../../context/RestaurantContext";
+import api from "../../services/api";
 import { toast } from "react-toastify";
 const PendingOrders = () => {
   const { orders, menuItems, loading, setRefreshTrigger, refreshTrigger } =
@@ -16,23 +16,24 @@ const PendingOrders = () => {
         status: status,
       });
 
-    if (response.data.success) {
-      // Refresh the data
-      setRefreshTrigger((prev) => prev + 1);
-      
-      if (isPaid) {
-        toast.success("Payment confirmed! You can now start preparing the order.");
+      if (response.data.success) {
+        // Refresh the data
+        setRefreshTrigger((prev) => prev + 1);
+
+        if (isPaid) {
+          toast.success(
+            "Payment confirmed! You can now start preparing the order."
+          );
+        } else {
+          toast.error("Payment status updated to not received.");
+        }
       } else {
-        toast.error("Payment status updated to not received.");
+        toast.error("Failed to update payment status: " + response.data.error);
       }
-    } else {
-      toast.error("Failed to update payment status: " + response.data.error);
+    } catch (error) {
+      console.error("Error updating payment status:", error);
     }
-  } catch (error) {
-    console.error("Error updating payment status:", error);
-    
-  }
-};
+  };
 
   // Enhanced order processing that matches your MongoDB schema
   const { pendingOrders, preparingOrders, servedOrders, cancelledOrders } =
@@ -150,9 +151,9 @@ const PendingOrders = () => {
 
       if (response.data.success) {
         // Refresh the data - this will reload the orders from the server
-        
+
         if (isPaid) {
-         setRefreshTrigger((prev) => prev + 1);
+          setRefreshTrigger((prev) => prev + 1);
           toast.success("Payment status updated to received.");
         } else {
           alert("Payment status updated to not received.");

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "../styles/RestoLogin.css";
+import "../../styles/RestoLogIn.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaUser, FaLock, FaUtensils } from "react-icons/fa"; // Import icons
@@ -54,7 +54,7 @@ const RestoLogIn = () => {
         toast.error(data.message);
       }
     } catch (err) {
-      console.log(err);
+    
       toast.error("Server error");
     }
   };

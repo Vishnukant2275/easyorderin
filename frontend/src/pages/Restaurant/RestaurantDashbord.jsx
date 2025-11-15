@@ -1,10 +1,10 @@
 import React from "react";
-import RestaurantSidebar from "../components/RestaurantSidebar";
-import StatusCards from "../components/StatusCards";
-import RevenueChart from "../components/RevenueChart";
-import RecentOrders from "../components/RecentOrders";
-import PopularMenu from "../components/PopularMenu";
-import StaffOverview from "../components/StaffOverview";
+import RestaurantSidebar from "../../components/RestaurantSidebar";
+import StatusCards from "../../components/StatusCards";
+import RevenueChart from "../../components/RevenueChart";
+import RecentOrders from "../../components/RecentOrders";
+import PopularMenu from "../../components/PopularMenu";
+import StaffOverview from "../../components/StaffOverview";
 
 const RestaurantDashbord = () => {
   return (
@@ -19,9 +19,7 @@ const RestaurantDashbord = () => {
         <StatusCards />
 
         {/* Row 2: Chart + Orders */}
-        <div className="row mt-4">
-          
-        </div>
+        <div className="row mt-4"></div>
         {/* Row 3: Popular Menu + Staff */}
         <div className="row">
           <div className="col-md-6 mb-4">

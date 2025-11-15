@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useUser } from "../context/UserContext";
-import api from "../services/api";
+import { useUser } from "../../context/UserContext";
+import api from "../../services/api";
 import styles from "./UserAccount.module.css";
 import { toast } from "react-toastify";
-
+import { useNavigate } from "react-router-dom";
 const UserAccount = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [orderHistory, setOrderHistory] = useState([]);
@@ -12,6 +12,7 @@ const UserAccount = () => {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const { user, updateUser, loginWithOtp, logout, isAuthenticated } = useUser();
+  const navigate = useNavigate();
 
   // Login form state
   const [phone, setPhone] = useState("");
@@ -49,18 +50,18 @@ const UserAccount = () => {
 
   const loadOrderHistory = async () => {
     if (!user?._id) {
-      console.log("❌ No user ID available");
+  
       return;
     }
 
     try {
       setOrdersLoading(true);
       const response = await api.get(`/user/${user._id}/orders`);
-      console.log("📦 RAW ORDER DATA:", response.data);
+     
 
       // Handle different response structures
       const orders = response.data.data || response.data.orders || [];
-      console.log("📦 Processed orders:", orders);
+   
 
       setOrderHistory(orders);
     } catch (error) {
@@ -75,7 +76,7 @@ const UserAccount = () => {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error("Please enter your name");
       return;
@@ -144,7 +145,9 @@ const UserAccount = () => {
           [settingId]: enabled,
         },
       });
-      toast.success(`Setting ${enabled ? "enabled" : "disabled"} successfully!`);
+      toast.success(
+        `Setting ${enabled ? "enabled" : "disabled"} successfully!`
+      );
     } catch (error) {
       console.error("Error updating setting:", error);
       toast.error("Failed to update setting. Please try again.");
@@ -184,8 +187,6 @@ const UserAccount = () => {
 
   // Login Handlers
   const handleSendOtp = async () => {
-    
-
     if (!phone.match(/^[6-9]\d{9}$/)) {
       toast.error("Please enter a valid 10-digit phone number");
       return;
@@ -198,13 +199,15 @@ const UserAccount = () => {
       if (response.data.success) {
         setOtpSent(true);
         toast.success("OTP sent successfully!");
-        console.log("Debug OTP:", response.data.debugOtp); // Remove in production
+   
       } else {
         toast.error(response.data.message || "Failed to send OTP");
       }
     } catch (error) {
       console.error("Error sending OTP:", error);
-      toast.error(error.response?.data?.message || "Error sending OTP. Please try again.");
+      toast.error(
+        error.response?.data?.message || "Error sending OTP. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -220,34 +223,37 @@ const UserAccount = () => {
       setLoading(true);
       const response = await api.post("/auth/verify-otp", { phone, otp, name });
 
-    if (response.data.success) {
-  // Store token and user data
-  localStorage.setItem("userToken", response.data.token);
-  localStorage.setItem("userData", JSON.stringify(response.data.user));
+      if (response.data.success) {
+        // Store token and user data
+        localStorage.setItem("userToken", response.data.token);
+        localStorage.setItem("userData", JSON.stringify(response.data.user));
 
-  // Update context
-  if (loginWithOtp) {
-    await loginWithOtp(response.data.user, response.data.token);
-  }
+        // Update context
+        if (loginWithOtp) {
+          await loginWithOtp(response.data.user, response.data.token);
+        }
 
-  toast.success("Login successful!");
-  
-  // Reset form
-  setName("");
-  setPhone("");
-  setOtp("");
-  setOtpSent(false);
-  
-  // Refresh the page after a short delay to ensure context is updated
-  setTimeout(() => {
-    window.location.reload();
-  }, 100);
-} else {
+        toast.success("Login successful!");
+
+        // Reset form
+        setName("");
+        setPhone("");
+        setOtp("");
+        setOtpSent(false);
+
+        // Refresh the page after a short delay to ensure context is updated
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      } else {
         toast.error(response.data.message || "Invalid OTP");
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
-      toast.error(error.response?.data?.message || "Verification failed. Please try again.");
+      toast.error(
+        error.response?.data?.message ||
+          "Verification failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -257,76 +263,24 @@ const UserAccount = () => {
   if (!isAuthenticated || !user) {
     return (
       <div className={styles.container}>
-        <div className={styles.loginContainer}>
-          <h2>Login to Your Account</h2>
+        <div className={styles.simpleCard}>
+          <div className={styles.cardIcon}> 👤</div>
+          <h3 className={styles.cardTitle}>Required Login ?</h3>
+          <p className={styles.cardText}>
+            Click below to place your order. You'll be automatically logged in
+            to your account for only 1 hour upon payment confirmation.
+          </p>
 
-          <div className={styles.loginForm}>
-            <div className={styles.formGroup}>
-              <label>Name(Optional)</label>
-              <input
-                type="text"
-                placeholder="Enter Your Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={loading || otpSent}
-              />
-            </div>
-            
-            <div className={styles.formGroup}>
-              <label>Mobile Number*</label>
-              <input
-                type="tel"
-                placeholder="Enter 10-digit number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                maxLength="10"
-                disabled={otpSent || loading}
-              />
-            </div>
-
-            {otpSent && (
-              <div className={styles.formGroup}>
-                <label>Enter OTP</label>
-                <input
-                  type="text"
-                  placeholder="Enter 6-digit OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  maxLength="6"
-                  disabled={loading}
-                />
-                <div className={styles.otpHint}>OTP sent to +91 {phone}</div>
-              </div>
-            )}
-
-            <button
-              onClick={otpSent ? handleVerifyOtp : handleSendOtp}
-              disabled={loading}
-              className={styles.otpButton}
-            >
-              {loading ? (
-                <div className={styles.loadingSpinner}></div>
-              ) : otpSent ? (
-                "Verify OTP"
-              ) : (
-                "Send OTP"
-              )}
-            </button>
-
-            {otpSent && (
-              <button
-                type="button"
-                onClick={() => {
-                  setOtpSent(false);
-                  setOtp("");
-                }}
-                className={styles.changeNumberButton}
-                disabled={loading}
-              >
-                Change Phone Number
-              </button>
-            )}
-          </div>
+          <button
+            className={styles.placeOrderButton}
+            onClick={() => {
+              const currentPath = window.location.pathname;
+              const newPath = currentPath.replace(/\/[^\/]*$/, "/getMenu");
+              navigate(newPath);
+            }}
+          >
+            Go to Menu
+          </button>
         </div>
       </div>
     );
@@ -337,10 +291,13 @@ const UserAccount = () => {
     name: user.name,
     email: user.email || "Email Not Available",
     phone: user.phone,
-    joinDate: new Date(user.createdAt || Date.now()).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-    }),
+    joinDate: new Date(user.createdAt || Date.now()).toLocaleDateString(
+      "en-US",
+      {
+        year: "numeric",
+        month: "long",
+      }
+    ),
     totalOrders: orderHistory.length,
     favoriteItems: user.preferences?.favoriteItems || [],
   };
@@ -434,7 +391,7 @@ const UserAccount = () => {
                       disabled={profileLoading}
                     />
                   </div>
-                 
+
                   <div className={styles.formActions}>
                     <button
                       type="submit"
@@ -499,8 +456,8 @@ const UserAccount = () => {
           <div className={styles.tabContent}>
             <div className={styles.sectionHeader}>
               <h2>Order History</h2>
-              <button 
-                onClick={loadOrderHistory} 
+              <button
+                onClick={loadOrderHistory}
                 className={styles.refreshButton}
                 disabled={ordersLoading}
               >
@@ -565,7 +522,8 @@ const UserAccount = () => {
 
                     {order.menuItems?.slice(0, 2).map((item, index) => (
                       <div key={index} className={styles.orderItemPreview}>
-                        {item.quantity}x {item.name || "Unknown Item"} - ₹{item.price || 0}
+                        {item.quantity}x {item.name || "Unknown Item"} - ₹
+                        {item.price || 0}
                       </div>
                     ))}
                     {order.menuItems && order.menuItems.length > 2 && (
@@ -573,8 +531,6 @@ const UserAccount = () => {
                         +{order.menuItems.length - 2} more items
                       </div>
                     )}
-
-                    
                   </div>
                 ))}
               </div>

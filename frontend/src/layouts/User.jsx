@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet, useLocation, useParams } from "react-router-dom";
-import UserFooter from "../pages/UserFooter";
-import UserHeader from "../pages/UserHeader";
+import UserFooter from "../pages/Users/UserFooter";
+import UserHeader from "../pages/Users/UserHeader";
 import { CartProvider } from "../context/CartContext"; // Import the CartProvider
 import styles from "./UserLayout.module.css";
 

@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import "../styles/UserMenu.css";
+import "../../styles/UserMenu.css";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../services/api";
-import { useCart } from "../context/CartContext";
-
-
+import api from "../../services/api";
+import { useCart } from "../../context/CartContext";
 
 const UserMenu = () => {
   const { restaurantID, tableNumber } = useParams();
@@ -22,8 +20,7 @@ const UserMenu = () => {
   const [restaurantInfo, setRestaurantInfo] = useState(null);
 
   // Define categories - you might want to make this dynamic based on actual menu categories
-  const categories = {
-  };
+  const categories = {};
 
   useEffect(() => {
     if (cart.length > 0) {
@@ -49,7 +46,7 @@ const UserMenu = () => {
           `/restaurant/${restaurantID}/table/${tableNumber}/getMenu`
         );
 
-        console.log("Table Menu response:", res.data);
+       
 
         if (res.data.success) {
           // Set restaurant info

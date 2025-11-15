@@ -6,11 +6,11 @@ import UserRouter from "./router/UserRouter";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-
+import PageNotFound from "./pages/PageNotFound";
 import Home from "./layouts/Home";
 import RestaurantDashboard from "./layouts/RestaurantDashboard";
 import StatusCards from "./components/StatusCards";
-
+import AdminRouter from "./router/AdminRouter";
 import DashboardRouter from "./router/DashboardRouter";
 import User from "./layouts/User";
 import { ToastContainer } from "react-toastify";
@@ -29,9 +29,11 @@ function App() {
         {/* Separate route for dashboard - not nested under Home */}
         <Route path="/dashboard/*" element={<DashboardRouter />} />
         <Route
-          path="/restaurant/:restaurantID/table/:tableNumber*"
+          path="/restaurant/:restaurantID/table/:tableNumber/*"
           element={<UserRouter />}
         />
+        <Route path="/admin/*" element={<AdminRouter />} />
+         <Route path="*" element={<PageNotFound/>} />
       </Routes>
       <ToastContainer
         position="top-right"
