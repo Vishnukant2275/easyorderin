@@ -59,7 +59,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({ 
   credentials: true, 
-  origin: process.env.CLIENT_URL || 'http://localhost:5173'
+  origin: process.env.CLIENT_URL
 }));
 app.use(helmet());
 app.use(morgan("dev"));
@@ -69,7 +69,7 @@ app.set("view engine", "ejs");
 // 7. Socket.IO setup with session support
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: process.env.CLIENT_URL ,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
   }
@@ -178,7 +178,7 @@ server.listen(PORT, () => {
   console.log(
     `✅ Server running in ${process.env.NODE_ENV || 'development'} mode on port http://localhost:${PORT}/api`
   );
-  console.log(`🔗 CORS enabled for: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+  console.log(`🔗 CORS enabled for: ${process.env.CLIENT_URL}`);
 });
 
 // Export for testing
