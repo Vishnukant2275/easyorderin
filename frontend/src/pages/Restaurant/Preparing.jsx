@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRestaurant } from "../../context/RestaurantContext";
-import api from "../../services";
+import api from "../../services/api";
 import NotActive from "../../components/NotActive";
 const Preparing = () => {
   const { orders, menuItems, loading, setRefreshTrigger, refreshTrigger } =

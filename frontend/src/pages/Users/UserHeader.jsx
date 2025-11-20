@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./UserHeader.css";
 import { useParams } from "react-router-dom";
-import api from "../../services";
+import api from "../../services/api";
 
 const UserHeader = () => {
   const { restaurantID, tableNumber } = useParams();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
-import api from "../../services";
+import api from "../../services/api";
 import styles from "./UserAccount.module.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";

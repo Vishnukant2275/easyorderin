@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../../styles/UserMenu.css";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../../services";
+import api from "../../services/api";
 import { useCart } from "../../context/CartContext";
 
 const UserMenu = () => {
@@ -45,8 +45,6 @@ const UserMenu = () => {
         const res = await api.get(
           `/restaurant/${restaurantID}/table/${tableNumber}/getMenu`
         );
-
-       
 
         if (res.data.success) {
           // Set restaurant info

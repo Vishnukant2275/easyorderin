@@ -7,7 +7,7 @@ import React, {
 import { useUser } from "../../context/UserContext";
 import styles from "./UserCart.module.css";
 import PaymentSection from "./PaymentSection";
-import api from "../../services";
+import api from "../../services/api";
 
 const UserInfoForm = forwardRef(
   (

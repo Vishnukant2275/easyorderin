@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import React from "react";
 import { Link } from "react-router-dom";
-import api from "../services";
+import api from "../services/api";
 import { useRestaurant } from "../context/RestaurantContext";
 
 const StatusCards = () => {

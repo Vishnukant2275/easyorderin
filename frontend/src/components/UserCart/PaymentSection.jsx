@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./UserCart.module.css";
-import api from "../../services";
+import api from "../../services/api";
 
 const PaymentSection = ({
   selectedPaymentMethod,

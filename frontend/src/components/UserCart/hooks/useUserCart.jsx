@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../../../context/UserContext";
-import api from "../../../services";
+import api from "../../../services/api";
 
 export const useUserCart = (restaurantID, tableNumber) => {
   const { user, isLoggedIn } = useUser();
