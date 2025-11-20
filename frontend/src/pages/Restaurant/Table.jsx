@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import api from "../../services ";
+import api from "../../services";
 import { useRestaurant } from "../../context/RestaurantContext";
 import NotActive from "../../components/NotActive";
 

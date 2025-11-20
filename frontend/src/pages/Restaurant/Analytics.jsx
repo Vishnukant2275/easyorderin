@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRestaurant } from "../../context/RestaurantContext";
-import api from "../../services ";
+import api from "../../services";
 
 const Analytics = () => {
   const { orders, menuItems } = useRestaurant();
