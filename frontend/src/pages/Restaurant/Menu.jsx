@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../../services/api";
+import api from "../../services ";
 import { useRestaurant } from "../../context/RestaurantContext";
 import { toast } from "react-toastify";
 
@@ -116,7 +116,7 @@ const Menu = () => {
       }
     } catch (error) {
       console.error(error);
-      toast.warn(error?.response?.data?.message || "An error occurred" );
+      toast.warn(error?.response?.data?.message || "An error occurred");
     }
     setRefreshTrigger((prev) => prev + 1);
   };

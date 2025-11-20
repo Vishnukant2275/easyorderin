@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRestaurant } from "../../context/RestaurantContext";
-import api from "../../services/api";
+import api from "../../services ";
 import { toast } from "react-toastify";
 import NotActive from "../../components/NotActive";
 const PendingOrders = () => {

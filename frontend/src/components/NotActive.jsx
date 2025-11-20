@@ -14,7 +14,7 @@ const NotActive = ({
   // Check restaurant status
   const checkRestaurantStatus = async () => {
     try {
-      const response = await fetch("/api/restaurant/status/current", {
+      const response = await fetch("/restaurant/status/current", {
         method: "GET",
         credentials: "include",
       });

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../../../context/UserContext";
-import api from "../../../services/api";
+import api from "../../../services ";
 
 export const useUserCart = (restaurantID, tableNumber) => {
   const { user, isLoggedIn } = useUser();
-  
+
   const [restaurantInfo, setRestaurantInfo] = useState(null);
   const [showUserForm, setShowUserForm] = useState(false);
   const [specialInstructions, setSpecialInstructions] = useState("");
@@ -16,7 +16,7 @@ export const useUserCart = (restaurantID, tableNumber) => {
         const res = await api.get(`/restaurant/${restaurantID}`);
         if (res.data.success) {
           setRestaurantInfo(res.data.restaurant);
-          console.log(res.data.restaurant.GST)
+          console.log(res.data.restaurant.GST);
         }
       } catch (error) {
         console.error("Error fetching restaurant info:", error);

@@ -33,11 +33,9 @@ const Payment = () => {
       setLoading(true);
       setError("");
 
-      const res = await axios.get("/api/restaurant/get-paymentqr", {
+      const res = await axios.get(" /restaurant/get-paymentqr", {
         withCredentials: true,
       });
-
-      
 
       if (res.data?.success && Array.isArray(res.data.qrCodes)) {
         setPaymentQRCodes(res.data.qrCodes);
@@ -86,15 +84,19 @@ const Payment = () => {
 
     try {
       setUploading(true);
-      const response = await axios.post("/api/restaurant/upload-paymentqr", submitData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        " /restaurant/upload-paymentqr",
+        submitData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        }
+      );
 
       setSuccess("QR code uploaded successfully!");
-      
+
       // Reset form
       setFormData({
         paymentMethod: "",
@@ -109,7 +111,6 @@ const Payment = () => {
       // Reset file input
       const fileInput = document.getElementById("file");
       if (fileInput) fileInput.value = "";
-
     } catch (error) {
       console.error("Error uploading QR code:", error);
       setError(error.response?.data?.error || "Failed to upload QR code");
@@ -119,15 +120,10 @@ const Payment = () => {
   };
 
   const deletePaymentMethod = async (qrId) => {
-  
-
     try {
-      const res = await axios.delete(
-        `/api/restaurant/delete-paymentqr/${qrId}`,
-        {
-          withCredentials: true,
-        }
-      );
+      const res = await axios.delete(` /restaurant/delete-paymentqr/${qrId}`, {
+        withCredentials: true,
+      });
 
       if (res.data.success) {
         setSuccess("Payment method deleted successfully!");
@@ -193,7 +189,7 @@ const Payment = () => {
             <h2>Add New Payment Method</h2>
             <div className="section-badge">New</div>
           </div>
-          
+
           <form onSubmit={handleSubmit} className="payment-form">
             <div className="form-grid">
               <div className="form-group">
@@ -263,7 +259,9 @@ const Payment = () => {
                   <label htmlFor="file" className="file-label">
                     <span className="file-icon">📁</span>
                     <span className="file-text">
-                      {formData.file ? formData.file.name : "Choose QR code image"}
+                      {formData.file
+                        ? formData.file.name
+                        : "Choose QR code image"}
                     </span>
                     <span className="file-button">Browse</span>
                   </label>
@@ -274,9 +272,9 @@ const Payment = () => {
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              className={`submit-btn ${uploading ? 'loading' : ''}`}
+            <button
+              type="submit"
+              className={`submit-btn ${uploading ? "loading" : ""}`}
               disabled={uploading}
             >
               {uploading ? (
@@ -298,8 +296,8 @@ const Payment = () => {
         <div className="existing-methods-section">
           <div className="section-header">
             <h2>Your Payment Methods</h2>
-            <button 
-              onClick={fetchPaymentQRCodes} 
+            <button
+              onClick={fetchPaymentQRCodes}
               className="refresh-btn"
               disabled={loading}
             >
@@ -324,9 +322,7 @@ const Payment = () => {
               {paymentQRCodes.map((method) => (
                 <div key={method._id} className="method-card">
                   <div className="card-header">
-                    <div className="method-badge">
-                      {method.paymentMethod}
-                    </div>
+                    <div className="method-badge">{method.paymentMethod}</div>
                     <button
                       className="delete-btn"
                       onClick={() => deletePaymentMethod(method._id)}
@@ -368,14 +364,14 @@ const Payment = () => {
                         </div>
                       </div>
                     )}
-                    
+
                     {method.note && (
                       <div className="detail-item">
                         <label>Note:</label>
                         <p className="note-text">{method.note}</p>
                       </div>
                     )}
-                    
+
                     <div className="card-footer">
                       <span className="created-date">
                         Added {new Date(method.createdAt).toLocaleDateString()}

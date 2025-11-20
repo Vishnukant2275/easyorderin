@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import api from "../../services/api";
+import api from "../../services ";
 import { useRestaurant } from "../../context/RestaurantContext";
 import NotActive from "../../components/NotActive";
 
@@ -86,7 +86,6 @@ const Table = () => {
   };
   const handleViewOrders = (tableItem) => {
     alert(`Viewing current orders for Table ${tableItem.tableNumber}`);
-   
   };
 
   const downloadQRCode = (tableId, tableNumber) => {
@@ -193,336 +192,343 @@ const Table = () => {
     }, 0);
   };
 
-  return (<>
-  <NotActive/>
-    <div className="container-fluid">
-      {/* Header and Stats */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div>
-              <h2 className="mb-1">Table Management</h2>
-              <p className="text-muted mb-0">
-                Manage restaurant tables and QR codes
-              </p>
-            </div>
-            <div className="btn-group">
-              <button
-                className="btn btn-outline-primary"
-                onClick={downloadAllQRCodes}
-              >
-                <i className="bi bi-download me-2"></i>
-                Download All QR Codes
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => setShowForm(true)}
-              >
-                <i className="bi bi-plus-circle me-2"></i>
-                Add Tables
-              </button>
-            </div>
-          </div>
-
-          {/* Statistics Cards */}
-          <div className="row g-3 mb-4">
-            <div className="col-md-3">
-              <div className="card bg-primary text-white">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between">
-                    <div>
-                      <h4 className="mb-0">{table.length}</h4>
-                      <small>Total Tables</small>
-                    </div>
-                    <i className="bi bi-table fs-2"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card bg-success text-white">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between">
-                    <div>
-                      <h4 className="mb-0">{getStatusCount("available")}</h4>
-                      <small>Available</small>
-                    </div>
-                    <i className="bi bi-check-circle fs-2"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card bg-danger text-white">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between">
-                    <div>
-                      <h4 className="mb-0">{getStatusCount("occupied")}</h4>
-                      <small>Occupied</small>
-                    </div>
-                    <i className="bi bi-people fs-2"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="row mb-4">
-        <div className="col-md-4">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search tables by number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="col-md-3">
-          <select
-            className="form-select"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="All">All Status</option>
-            {statusOptions.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="col-md-2">
-          <span className="badge bg-secondary p-2 h-100 d-flex align-items-center">
-            {filteredTables.length} tables
-          </span>
-        </div>
-      </div>
-
-      {/* Tables Grid */}
-      <div className="row g-4">
-        {filteredTables.length === 0 ? (
+  return (
+    <>
+      <NotActive />
+      <div className="container-fluid">
+        {/* Header and Stats */}
+        <div className="row mb-4">
           <div className="col-12">
-            <div className="text-center py-5">
-              <i
-                className="bi bi-table text-muted"
-                style={{ fontSize: "3rem" }}
-              ></i>
-              <h4 className="mt-3 text-muted">No tables found</h4>
-              <p className="text-muted">
-                {table.length === 0
-                  ? "Create your first table"
-                  : "Try adjusting your search filters"}
-              </p>
-            </div>
-          </div>
-        ) : (
-          filteredTables.map((tableItem) => (
-            <div key={tableItem._id} className="col-md-6 col-lg-4 col-xl-3">
-              <div className="card h-100">
-                <div className="card-header d-flex justify-content-between align-items-center">
-                  <strong>Table {tableItem.tableNumber}</strong>
-                  {getStatusBadge(tableItem.status)}
-                </div>
-
-                <div className="card-body text-center">
-                  {/* QR Code */}
-                  <div className="mb-3">
-                    <div
-                      className="border rounded p-3 d-inline-block"
-                      style={{ cursor: "pointer" }}
-                      onClick={() =>
-                        setSelectedTable(
-                          selectedTable?._id === tableItem._id
-                            ? null
-                            : tableItem
-                        )
-                      }
-                    >
-                      <QRCodeSVG
-                        ref={(el) => (qrRefs.current[tableItem._id] = el)}
-                        value={`     http://172.22.187.32:5173/restaurant/${restaurant._id}/table/${tableItem.tableNumber}/getMenu`}
-                        size={qrSize}
-                        level="H"
-                        includeMargin={true}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Quick Status Update - FIXED: Added onClick handler */}
-                  <div className="mb-3">
-                    <div className="btn-group w-100">
-                      {statusOptions.map((status) => (
-                        <button
-                          key={`${tableItem._id}-${status.value}`}
-                          className={`btn btn-sm btn-outline-${status.color} ${
-                            tableItem.status === status.value ? "active" : ""
-                          }`}
-                        >
-                          {status.label}
-                        </button>
-                      ))}
-                    </div>
-                    {tableItem.status === "occupied" && (
-                      <small
-                        className="current-orders-link"
-                        onClick={() => handleViewOrders(tableItem)}
-                      >
-                        View Current Orders
-                      </small>
-                    )}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="card-footer bg-transparent">
-                  <div className="btn-group w-100">
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() =>
-                        downloadQRCode(tableItem._id, tableItem.numberOfTables)
-                      }
-                      title="Download QR Code"
-                    >
-                      <i className="bi bi-download"></i>
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-success"
-                      onClick={() => printQRCode(tableItem._id)}
-                      title="Print QR Code"
-                    >
-                      <i className="bi bi-printer"></i>
-                    </button>
-                  </div>
-                </div>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <div>
+                <h2 className="mb-1">Table Management</h2>
+                <p className="text-muted mb-0">
+                  Manage restaurant tables and QR codes
+                </p>
               </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* QR Code Preview Modal */}
-      {selectedTable && (
-        <div
-          className="modal show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-sm">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  QR Code - Table {selectedTable.numberOfTables}
-                </h5>
+              <div className="btn-group">
                 <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setSelectedTable(null)}
-                ></button>
-              </div>
-              <div className="modal-body text-center">
-                <QRCodeSVG
-                  value={`/restaurant/${restaurant._id}/table/${selectedTable.tableNumber}/getMenu`}
-                  size={256}
-                  level="H"
-                  includeMargin={true}
-                />
-                <div className="mt-3">
-                  <p className="mb-1">
-                    <strong>Table {selectedTable.numberOfTables}</strong>
-                  </p>
-                  <p className="text-muted small">
-                    Status: {selectedTable.status}
-                  </p>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-primary"
-                  onClick={() =>
-                    downloadQRCode(
-                      selectedTable._id,
-                      selectedTable.numberOfTables
-                    )
-                  }
+                  className="btn btn-outline-primary"
+                  onClick={downloadAllQRCodes}
                 >
                   <i className="bi bi-download me-2"></i>
-                  Download
+                  Download All QR Codes
                 </button>
                 <button
-                  className="btn btn-success"
-                  onClick={() => printQRCode(selectedTable._id)}
+                  className="btn btn-primary"
+                  onClick={() => setShowForm(true)}
                 >
-                  <i className="bi bi-printer me-2"></i>
-                  Print
+                  <i className="bi bi-plus-circle me-2"></i>
+                  Add Tables
                 </button>
+              </div>
+            </div>
+
+            {/* Statistics Cards */}
+            <div className="row g-3 mb-4">
+              <div className="col-md-3">
+                <div className="card bg-primary text-white">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between">
+                      <div>
+                        <h4 className="mb-0">{table.length}</h4>
+                        <small>Total Tables</small>
+                      </div>
+                      <i className="bi bi-table fs-2"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="card bg-success text-white">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between">
+                      <div>
+                        <h4 className="mb-0">{getStatusCount("available")}</h4>
+                        <small>Available</small>
+                      </div>
+                      <i className="bi bi-check-circle fs-2"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="card bg-danger text-white">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between">
+                      <div>
+                        <h4 className="mb-0">{getStatusCount("occupied")}</h4>
+                        <small>Occupied</small>
+                      </div>
+                      <i className="bi bi-people fs-2"></i>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Add Tables Form Modal */}
-      {showForm && (
-        <div
-          className="modal show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {editMode ? "Edit Table" : "Create Tables in Bulk"}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={resetForm}
-                ></button>
+        {/* Search and Filters */}
+        <div className="row mb-4">
+          <div className="col-md-4">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search tables by number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="col-md-3">
+            <select
+              className="form-select"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="All">All Status</option>
+              {statusOptions.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-2">
+            <span className="badge bg-secondary p-2 h-100 d-flex align-items-center">
+              {filteredTables.length} tables
+            </span>
+          </div>
+        </div>
+
+        {/* Tables Grid */}
+        <div className="row g-4">
+          {filteredTables.length === 0 ? (
+            <div className="col-12">
+              <div className="text-center py-5">
+                <i
+                  className="bi bi-table text-muted"
+                  style={{ fontSize: "3rem" }}
+                ></i>
+                <h4 className="mt-3 text-muted">No tables found</h4>
+                <p className="text-muted">
+                  {table.length === 0
+                    ? "Create your first table"
+                    : "Try adjusting your search filters"}
+                </p>
               </div>
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row g-3">
-                    <div className="col-12">
-                      <label className="form-label">
-                        Number of Tables to Add
-                      </label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        name="numberOfTables"
-                        value={formData.numberOfTables}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 10"
-                        min="1"
-                        max="50"
-                        required
-                      />
-                      <div className="form-text">
-                        Enter how many tables you want to create
+            </div>
+          ) : (
+            filteredTables.map((tableItem) => (
+              <div key={tableItem._id} className="col-md-6 col-lg-4 col-xl-3">
+                <div className="card h-100">
+                  <div className="card-header d-flex justify-content-between align-items-center">
+                    <strong>Table {tableItem.tableNumber}</strong>
+                    {getStatusBadge(tableItem.status)}
+                  </div>
+
+                  <div className="card-body text-center">
+                    {/* QR Code */}
+                    <div className="mb-3">
+                      <div
+                        className="border rounded p-3 d-inline-block"
+                        style={{ cursor: "pointer" }}
+                        onClick={() =>
+                          setSelectedTable(
+                            selectedTable?._id === tableItem._id
+                              ? null
+                              : tableItem
+                          )
+                        }
+                      >
+                        <QRCodeSVG
+                          ref={(el) => (qrRefs.current[tableItem._id] = el)}
+                          value={`     http://172.22.187.32:5173/restaurant/${restaurant._id}/table/${tableItem.tableNumber}/getMenu`}
+                          size={qrSize}
+                          level="H"
+                          includeMargin={true}
+                        />
                       </div>
                     </div>
+
+                    {/* Quick Status Update - FIXED: Added onClick handler */}
+                    <div className="mb-3">
+                      <div className="btn-group w-100">
+                        {statusOptions.map((status) => (
+                          <button
+                            key={`${tableItem._id}-${status.value}`}
+                            className={`btn btn-sm btn-outline-${
+                              status.color
+                            } ${
+                              tableItem.status === status.value ? "active" : ""
+                            }`}
+                          >
+                            {status.label}
+                          </button>
+                        ))}
+                      </div>
+                      {tableItem.status === "occupied" && (
+                        <small
+                          className="current-orders-link"
+                          onClick={() => handleViewOrders(tableItem)}
+                        >
+                          View Current Orders
+                        </small>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="card-footer bg-transparent">
+                    <div className="btn-group w-100">
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() =>
+                          downloadQRCode(
+                            tableItem._id,
+                            tableItem.numberOfTables
+                          )
+                        }
+                        title="Download QR Code"
+                      >
+                        <i className="bi bi-download"></i>
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline-success"
+                        onClick={() => printQRCode(tableItem._id)}
+                        title="Print QR Code"
+                      >
+                        <i className="bi bi-printer"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* QR Code Preview Modal */}
+        {selectedTable && (
+          <div
+            className="modal show d-block"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          >
+            <div className="modal-dialog modal-sm">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    QR Code - Table {selectedTable.numberOfTables}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setSelectedTable(null)}
+                  ></button>
+                </div>
+                <div className="modal-body text-center">
+                  <QRCodeSVG
+                    value={`/restaurant/${restaurant._id}/table/${selectedTable.tableNumber}/getMenu`}
+                    size={256}
+                    level="H"
+                    includeMargin={true}
+                  />
+                  <div className="mt-3">
+                    <p className="mb-1">
+                      <strong>Table {selectedTable.numberOfTables}</strong>
+                    </p>
+                    <p className="text-muted small">
+                      Status: {selectedTable.status}
+                    </p>
                   </div>
                 </div>
                 <div className="modal-footer">
                   <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={resetForm}
+                    className="btn btn-primary"
+                    onClick={() =>
+                      downloadQRCode(
+                        selectedTable._id,
+                        selectedTable.numberOfTables
+                      )
+                    }
                   >
-                    Cancel
+                    <i className="bi bi-download me-2"></i>
+                    Download
                   </button>
-                  <button type="submit" className="btn btn-primary">
-                    {editMode ? "Update Table" : "Create Tables"}
+                  <button
+                    className="btn btn-success"
+                    onClick={() => printQRCode(selectedTable._id)}
+                  >
+                    <i className="bi bi-printer me-2"></i>
+                    Print
                   </button>
                 </div>
-              </form>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div></>
+        )}
+
+        {/* Add Tables Form Modal */}
+        {showForm && (
+          <div
+            className="modal show d-block"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          >
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    {editMode ? "Edit Table" : "Create Tables in Bulk"}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={resetForm}
+                  ></button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row g-3">
+                      <div className="col-12">
+                        <label className="form-label">
+                          Number of Tables to Add
+                        </label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          name="numberOfTables"
+                          value={formData.numberOfTables}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 10"
+                          min="1"
+                          max="50"
+                          required
+                        />
+                        <div className="form-text">
+                          Enter how many tables you want to create
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={resetForm}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      {editMode ? "Update Table" : "Create Tables"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

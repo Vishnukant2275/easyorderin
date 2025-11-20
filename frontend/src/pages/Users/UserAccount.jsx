@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
-import api from "../../services/api";
+import api from "../../services ";
 import styles from "./UserAccount.module.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -50,18 +50,15 @@ const UserAccount = () => {
 
   const loadOrderHistory = async () => {
     if (!user?._id) {
-  
       return;
     }
 
     try {
       setOrdersLoading(true);
       const response = await api.get(`/user/${user._id}/orders`);
-     
 
       // Handle different response structures
       const orders = response.data.data || response.data.orders || [];
-   
 
       setOrderHistory(orders);
     } catch (error) {
@@ -199,7 +196,6 @@ const UserAccount = () => {
       if (response.data.success) {
         setOtpSent(true);
         toast.success("OTP sent successfully!");
-   
       } else {
         toast.error(response.data.message || "Failed to send OTP");
       }

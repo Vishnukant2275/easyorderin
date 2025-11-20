@@ -10,7 +10,7 @@ const UserProtectedRoute = ({ children }) => {
   useEffect(() => {
     const checkUserSession = async () => {
       try {
-        const res = await axios.get("/api/auth/check-auth", {
+        const res = await axios.get(" /auth/check-auth", {
           withCredentials: true, // important for cookie/session
         });
 

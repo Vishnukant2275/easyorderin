@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../../styles/UserMenu.css";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../../services/api";
+import api from "../../services";
 import { useCart } from "../../context/CartContext";
 
 const UserMenu = () => {
@@ -307,7 +307,7 @@ const UserMenu = () => {
                       {/* Menu Item Image */}
                       <div className="item-image">
                         <img
-                          src={item.image} // ✅ already the full image URL or /api/restaurant/image/:id
+                          src={item.image} // ✅ already the full image URL or /restaurant/image/:id
                           alt={item.name}
                           className="menu-img"
                           onError={(e) => {

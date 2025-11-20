@@ -1,12 +1,12 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import api from '../services/api';
+import React, { createContext, useState, useContext, useEffect } from "react";
+import api from "../services ";
 
 const UserContext = createContext();
 
 export const useUser = () => {
   const context = useContext(UserContext);
   if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
+    throw new Error("useUser must be used within a UserProvider");
   }
   return context;
 };
@@ -26,25 +26,25 @@ export const UserProvider = ({ children }) => {
     try {
       setError(null);
       setLoading(true);
-      
-      const response = await api.get('/auth/check-auth', {
-        withCredentials: true // Important for session cookies
+
+      const response = await api.get("/auth/check-auth", {
+        withCredentials: true, // Important for session cookies
       });
-      
+
       if (response.data.authenticated) {
         setUser(response.data.user);
         setIsAuthenticated(true);
-        
+
         // Optionally fetch full user profile
         try {
-          const profileResponse = await api.get('/auth/me', {
-            withCredentials: true
+          const profileResponse = await api.get("/auth/me", {
+            withCredentials: true,
           });
           if (profileResponse.data.success) {
             setUser(profileResponse.data.data);
           }
         } catch (profileError) {
-          console.warn('Failed to fetch full profile:', profileError);
+          console.warn("Failed to fetch full profile:", profileError);
           // Continue with basic user data from check-auth
         }
       } else {
@@ -52,7 +52,7 @@ export const UserProvider = ({ children }) => {
         setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error("Auth check failed:", error);
       setUser(null);
       setIsAuthenticated(false);
       // Don't set error here as it might be normal for non-authenticated users
@@ -65,10 +65,11 @@ export const UserProvider = ({ children }) => {
   const sendOtp = async (phone) => {
     try {
       setError(null);
-      const response = await api.post('/auth/send-otp', { phone });
+      const response = await api.post("/auth/send-otp", { phone });
       return response.data;
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to send OTP';
+      const errorMessage =
+        error.response?.data?.message || "Failed to send OTP";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -79,12 +80,13 @@ export const UserProvider = ({ children }) => {
     try {
       setError(null);
       setLoading(true);
-      
-      const response = await api.post('/auth/verify-otp', 
-        { phone, otp }, 
+
+      const response = await api.post(
+        "/auth/verify-otp",
+        { phone, otp },
         { withCredentials: true }
       );
-      
+
       if (response.data.success) {
         setUser(response.data.user);
         setIsAuthenticated(true);
@@ -94,7 +96,8 @@ export const UserProvider = ({ children }) => {
         return { success: false, error: response.data.message };
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'OTP verification failed';
+      const errorMessage =
+        error.response?.data?.message || "OTP verification failed";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -106,10 +109,11 @@ export const UserProvider = ({ children }) => {
   const resendOtp = async (phone) => {
     try {
       setError(null);
-      const response = await api.post('/auth/resend-otp', { phone });
+      const response = await api.post("/auth/resend-otp", { phone });
       return response.data;
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to resend OTP';
+      const errorMessage =
+        error.response?.data?.message || "Failed to resend OTP";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -118,9 +122,9 @@ export const UserProvider = ({ children }) => {
   // Logout
   const logout = async () => {
     try {
-      await api.post('/auth/logout', {}, { withCredentials: true });
+      await api.post("/auth/logout", {}, { withCredentials: true });
     } catch (error) {
-      console.error('Logout API call failed:', error);
+      console.error("Logout API call failed:", error);
     } finally {
       // Clear local state regardless of API call result
       setUser(null);
@@ -133,20 +137,20 @@ export const UserProvider = ({ children }) => {
   const updateUser = async (updateData) => {
     try {
       if (!user?._id) {
-        throw new Error('No user logged in');
+        throw new Error("No user logged in");
       }
 
       const response = await api.put(`/user/${user._id}`, updateData, {
-        withCredentials: true
+        withCredentials: true,
       });
-      
+
       if (response.data.success) {
         const updatedUser = response.data.data;
         setUser(updatedUser);
         return { success: true, user: updatedUser };
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Update failed';
+      const errorMessage = error.response?.data?.error || "Update failed";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -156,16 +160,17 @@ export const UserProvider = ({ children }) => {
   const getUserOrders = async (userId = user?._id) => {
     try {
       if (!userId) {
-        throw new Error('User ID required');
+        throw new Error("User ID required");
       }
 
       const response = await api.get(`/user/${userId}/orders`, {
-        withCredentials: true
+        withCredentials: true,
       });
-      
+
       return response.data;
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Failed to fetch orders';
+      const errorMessage =
+        error.response?.data?.error || "Failed to fetch orders";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -180,28 +185,24 @@ export const UserProvider = ({ children }) => {
     loading,
     isAuthenticated,
     error,
-    
+
     // Auth methods
     sendOtp,
     verifyOtp,
     resendOtp,
     logout,
     checkAuthStatus,
-    
+
     // User methods
     updateUser,
     getUserOrders,
-    
+
     // Utility methods
     clearError,
-    setError
+    setError,
   };
 
-  return (
-    <UserContext.Provider value={value}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
 
 export default UserContext;

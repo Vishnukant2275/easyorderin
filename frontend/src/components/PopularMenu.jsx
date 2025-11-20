@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from "react";
-import api from "../services/api";
+import api from "../services ";
 import { useRestaurant } from "../context/RestaurantContext";
 
 // Helper for progress bar color
 const getProgressBarColor = (index) => {
   const colors = [
-    "#007bff", "#28a745", "#ffc107", "#dc3545", "#6f42c1",
-    "#e83e8c", "#fd7e14", "#20c997", "#17a2b8", "#6c757d"
+    "#007bff",
+    "#28a745",
+    "#ffc107",
+    "#dc3545",
+    "#6f42c1",
+    "#e83e8c",
+    "#fd7e14",
+    "#20c997",
+    "#17a2b8",
+    "#6c757d",
   ];
   return colors[index % colors.length];
 };
@@ -24,14 +32,14 @@ const PopularMenu = () => {
   const fetchPopularItems = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/restaurant/orders/all');
-      
+      const response = await api.get("/restaurant/orders/all");
+
       if (response.data.success) {
         const orders = response.data.orders || [];
         calculatePopularItems(orders);
       }
     } catch (error) {
-      console.error('Error fetching orders for popular items:', error);
+      console.error("Error fetching orders for popular items:", error);
     } finally {
       setLoading(false);
     }
@@ -39,27 +47,27 @@ const PopularMenu = () => {
 
   const calculatePopularItems = (orders) => {
     const itemCounts = {};
-    
+
     // Count orders for each menu item
-    orders.forEach(order => {
-      order.menuItems?.forEach(orderItem => {
+    orders.forEach((order) => {
+      order.menuItems?.forEach((orderItem) => {
         const menuItemId = orderItem.menuId;
-        const menuItem = menuItems?.find(item => item._id === menuItemId);
-        
+        const menuItem = menuItems?.find((item) => item._id === menuItemId);
+
         if (menuItem) {
           const itemName = menuItem.name;
           const quantity = orderItem.quantity || 1;
           const price = menuItem.price || 0;
-          
+
           if (!itemCounts[itemName]) {
             itemCounts[itemName] = {
               orders: 0,
               totalQuantity: 0,
               revenue: 0,
-              price: price
+              price: price,
             };
           }
-          
+
           itemCounts[itemName].orders += 1;
           itemCounts[itemName].totalQuantity += quantity;
           itemCounts[itemName].revenue += quantity * price;
@@ -68,29 +76,40 @@ const PopularMenu = () => {
     });
 
     // Convert to array and sort by order count
-    const itemsArray = Object.entries(itemCounts).map(([name, data]) => ({
-      name,
-      orders: data.orders,
-      totalQuantity: data.totalQuantity,
-      revenue: data.revenue,
-      price: data.price,
-      growth: calculateGrowth(data.orders) // Mock growth for now
-    })).sort((a, b) => b.orders - a.orders);
+    const itemsArray = Object.entries(itemCounts)
+      .map(([name, data]) => ({
+        name,
+        orders: data.orders,
+        totalQuantity: data.totalQuantity,
+        revenue: data.revenue,
+        price: data.price,
+        growth: calculateGrowth(data.orders), // Mock growth for now
+      }))
+      .sort((a, b) => b.orders - a.orders);
 
     setPopularItems(itemsArray);
   };
 
   // Mock growth calculation - in real app, compare with previous period
   const calculateGrowth = (orders) => {
-    const growthRates = ["+12%", "+8%", "+15%", "+5%", "+20%", "+10%", "+18%", "+7%"];
+    const growthRates = [
+      "+12%",
+      "+8%",
+      "+15%",
+      "+5%",
+      "+20%",
+      "+10%",
+      "+18%",
+      "+7%",
+    ];
     return growthRates[Math.floor(Math.random() * growthRates.length)];
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -101,7 +120,10 @@ const PopularMenu = () => {
           <h6 className="card-title mb-0">Popular Items</h6>
         </div>
         <div className="card-body text-center py-4">
-          <div className="spinner-border spinner-border-sm text-primary" role="status">
+          <div
+            className="spinner-border spinner-border-sm text-primary"
+            role="status"
+          >
             <span className="visually-hidden">Loading...</span>
           </div>
           <small className="text-muted ms-2">Loading popular items...</small>
@@ -142,7 +164,10 @@ const PopularMenu = () => {
       <div className="card-body compact-body p-0">
         <div className="list-group list-group-flush">
           {visibleItems.map((item, index) => {
-            const percentage = totalOrders > 0 ? ((item.orders / totalOrders) * 100).toFixed(1) : 0;
+            const percentage =
+              totalOrders > 0
+                ? ((item.orders / totalOrders) * 100).toFixed(1)
+                : 0;
             return (
               <div key={index} className="list-group-item border-0 px-3 py-2">
                 <div className="d-flex justify-content-between align-items-center mb-1">
@@ -150,7 +175,9 @@ const PopularMenu = () => {
                     <span className="badge rank-badge me-2">{index + 1}</span>
                     <div>
                       <h6 className="mb-0 fw-medium item-name">{item.name}</h6>
-                      <small className="text-muted">{formatCurrency(item.price)}</small>
+                      <small className="text-muted">
+                        {formatCurrency(item.price)}
+                      </small>
                     </div>
                   </div>
                   <div className="text-end">
@@ -194,7 +221,9 @@ const PopularMenu = () => {
               className="btn btn-link text-primary small"
               onClick={() => setShowAll(!showAll)}
             >
-              {showAll ? "Show Less ▲" : `Show More ▼ (${popularItems.length - 5} more)`}
+              {showAll
+                ? "Show Less ▲"
+                : `Show More ▼ (${popularItems.length - 5} more)`}
             </button>
           </div>
         )}
@@ -209,14 +238,14 @@ const PopularMenu = () => {
               <small className="text-muted">Top Item</small>
             </div>
             <div className="col-4 border-end">
-              <div className="fw-bold text-success">
-                {popularItems.length}
-              </div>
+              <div className="fw-bold text-success">{popularItems.length}</div>
               <small className="text-muted">Items</small>
             </div>
             <div className="col-4">
               <div className="fw-bold text-info">
-                {formatCurrency(popularItems.reduce((sum, item) => sum + item.revenue, 0))}
+                {formatCurrency(
+                  popularItems.reduce((sum, item) => sum + item.revenue, 0)
+                )}
               </div>
               <small className="text-muted">Revenue</small>
             </div>

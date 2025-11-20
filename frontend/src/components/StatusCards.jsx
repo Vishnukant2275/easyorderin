@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import React from "react";
 import { Link } from "react-router-dom";
-import api from "../services/api";
+import api from "../services ";
 import { useRestaurant } from "../context/RestaurantContext";
 
 const StatusCards = () => {
@@ -11,31 +11,31 @@ const StatusCards = () => {
     todayOrders: 0,
     totalRevenue: 0,
     loading: true,
-    error: null
+    error: null,
   });
 
   // Fetch all orders from API
   useEffect(() => {
     const fetchAllOrders = async () => {
       try {
-        setOrderStats(prev => ({ ...prev, loading: true, error: null }));
-        
-        const response = await api.get('/restaurant/orders/all');
-        
+        setOrderStats((prev) => ({ ...prev, loading: true, error: null }));
+
+        const response = await api.get("/restaurant/orders/all");
+
         if (response.data.success) {
           const allOrders = response.data.orders || [];
-          
+
           // Calculate statistics from all orders
           const totalOrders = allOrders.length;
-          
-          const todayOrders = allOrders.filter(order => {
+
+          const todayOrders = allOrders.filter((order) => {
             const orderDate = new Date(order.createdAt);
             const today = new Date();
             return orderDate.toDateString() === today.toDateString();
           }).length;
 
           const totalRevenue = allOrders
-            .filter(order => order.status === "served" && order.isPaid)
+            .filter((order) => order.status === "served" && order.isPaid)
             .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
 
           setOrderStats({
@@ -43,21 +43,21 @@ const StatusCards = () => {
             todayOrders,
             totalRevenue,
             loading: false,
-            error: null
+            error: null,
           });
         } else {
-          setOrderStats(prev => ({
+          setOrderStats((prev) => ({
             ...prev,
             loading: false,
-            error: response.data.error || 'Failed to fetch orders'
+            error: response.data.error || "Failed to fetch orders",
           }));
         }
       } catch (error) {
-        console.error('Error fetching all orders:', error);
-        setOrderStats(prev => ({
+        console.error("Error fetching all orders:", error);
+        setOrderStats((prev) => ({
           ...prev,
           loading: false,
-          error: error.response?.data?.error || 'Network error'
+          error: error.response?.data?.error || "Network error",
         }));
       }
     };
@@ -95,16 +95,16 @@ const StatusCards = () => {
   const qrCodesCount = paymentQRCodes?.length || 0;
 
   // Show loading state for total orders card
-  const totalOrdersDisplay = orderStats.loading 
-    ? "..." 
-    : orderStats.error 
-    ? "Error" 
+  const totalOrdersDisplay = orderStats.loading
+    ? "..."
+    : orderStats.error
+    ? "Error"
     : orderStats.totalOrders;
 
-  const todayOrdersBadge = orderStats.loading 
-    ? "..." 
-    : orderStats.error 
-    ? "" 
+  const todayOrdersBadge = orderStats.loading
+    ? "..."
+    : orderStats.error
+    ? ""
     : `${orderStats.todayOrders} today`;
 
   // 🎨 Card data with loading states
@@ -154,7 +154,8 @@ const StatusCards = () => {
     {
       title: "Menu Items",
       value: menuItems?.length || 0,
-      gradient: "linear-gradient(135deg, #FF9A8B 0%, #FF6A88 50%, #FF99AC 100%)",
+      gradient:
+        "linear-gradient(135deg, #FF9A8B 0%, #FF6A88 50%, #FF99AC 100%)",
       url: "/menu",
       icon: "🍽️",
     },
@@ -166,7 +167,7 @@ const StatusCards = () => {
       icon: "📦",
       description: todayOrdersBadge,
       isLoading: orderStats.loading,
-      hasError: orderStats.error
+      hasError: orderStats.error,
     },
   ];
 
@@ -181,49 +182,52 @@ const StatusCards = () => {
                 background: card.gradient,
                 transition: "all 0.3s ease",
                 minHeight: "120px",
-                opacity: card.isLoading ? 0.7 : 1
+                opacity: card.isLoading ? 0.7 : 1,
               }}
             >
               <div className="card-body p-3 d-flex flex-column justify-content-center align-items-center text-center">
                 {/* Loading spinner for total orders card */}
                 {card.isLoading && (
                   <div className="position-absolute top-50 start-50 translate-middle">
-                    <div className="spinner-border spinner-border-sm" role="status">
+                    <div
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                    >
                       <span className="visually-hidden">Loading...</span>
                     </div>
                   </div>
                 )}
-                
-                <div 
-                  className="card-icon mb-1" 
-                  style={{ 
+
+                <div
+                  className="card-icon mb-1"
+                  style={{
                     fontSize: "1.8rem",
-                    opacity: card.isLoading ? 0.3 : 1 
+                    opacity: card.isLoading ? 0.3 : 1,
                   }}
                 >
                   {card.icon}
                 </div>
-                
-                <h6 
+
+                <h6
                   className="card-title mb-1 fw-semibold small"
                   style={{ opacity: card.isLoading ? 0.3 : 1 }}
                 >
                   {card.title}
                 </h6>
-                
-                <h5 
+
+                <h5
                   className="card-value fw-bold m-0"
                   style={{ opacity: card.isLoading ? 0.3 : 1 }}
                 >
                   {card.value}
                 </h5>
-                
+
                 {/* Badge for today's orders */}
                 {card.description && !card.isLoading && (
                   <div className="position-absolute top-0 end-0 mt-2 me-2">
-                    <span 
+                    <span
                       className="badge bg-light text-dark px-2 py-1"
-                      style={{ fontSize: '0.65rem', fontWeight: '600' }}
+                      style={{ fontSize: "0.65rem", fontWeight: "600" }}
                     >
                       {card.description}
                     </span>
@@ -233,9 +237,9 @@ const StatusCards = () => {
                 {/* Error indicator */}
                 {card.hasError && (
                   <div className="position-absolute top-0 start-0 mt-2 ms-2">
-                    <span 
+                    <span
                       className="badge bg-danger px-2 py-1"
-                      style={{ fontSize: '0.6rem' }}
+                      style={{ fontSize: "0.6rem" }}
                       title={card.hasError}
                     >
                       !

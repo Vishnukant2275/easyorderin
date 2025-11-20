@@ -35,7 +35,7 @@ const RestoLogIn = () => {
 const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    const response = await fetch("/api/restaurant/login", {
+    const response = await fetch("/restaurant/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import ChatBox from "../components/ChantBox";
-import api from "../services/api";
+import api from "../services ";
 const RestaurantContext = createContext();
 
 export const RestaurantProvider = ({ children }) => {
@@ -37,7 +37,6 @@ export const RestaurantProvider = ({ children }) => {
     const fetchMenu = async () => {
       try {
         const res = await api.get("/restaurant/menu");
-      
 
         if (
           Array.isArray(res.data) &&
@@ -61,7 +60,6 @@ export const RestaurantProvider = ({ children }) => {
       try {
         const res = await api.get("/restaurant/tables");
         setTable(res.data[0].tables || []);
-       
       } catch (err) {
         console.error("Error fetching tables:", err);
       }
@@ -75,9 +73,8 @@ export const RestaurantProvider = ({ children }) => {
       try {
         setLoading(true);
         const res = await api.get("/restaurant/orders");
-        if (res.data.success && Array.isArray(res.data.orders))  {
+        if (res.data.success && Array.isArray(res.data.orders)) {
           setOrders(res.data.orders);
-
 
           // Log user data to verify it's populated
           res.data.orders.forEach((order) => {
@@ -102,9 +99,9 @@ export const RestaurantProvider = ({ children }) => {
 
     fetchOrders();
   }, [refreshTrigger]);
-  
-//fetching payment methods
- useEffect(() => {
+
+  //fetching payment methods
+  useEffect(() => {
     const fetchPaymentQRCodes = async () => {
       try {
         setLoadingQRCodes(true);
@@ -113,8 +110,6 @@ export const RestaurantProvider = ({ children }) => {
         const res = await api.get("/restaurant/get-paymentqr", {
           withCredentials: true,
         });
-
-       
 
         if (res.data?.success && Array.isArray(res.data.qrCodes)) {
           setPaymentQRCodes(res.data.qrCodes);
@@ -135,9 +130,6 @@ export const RestaurantProvider = ({ children }) => {
 
     fetchPaymentQRCodes();
   }, []);
-
-
-
 
   return (
     <RestaurantContext.Provider

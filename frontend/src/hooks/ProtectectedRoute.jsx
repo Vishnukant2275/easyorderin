@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await axios.get("/api/auth/check-session", {
+        const res = await axios.get(" /auth/check-session", {
           withCredentials: true, // ✅ send session cookie
         });
 
@@ -33,7 +33,11 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) return <div>🔍 Checking session...</div>;
 
-  return isValidSession ? children : <Navigate to="/restaurant/login" replace />;
+  return isValidSession ? (
+    children
+  ) : (
+    <Navigate to="/restaurant/login" replace />
+  );
 };
 
 export default ProtectedRoute;

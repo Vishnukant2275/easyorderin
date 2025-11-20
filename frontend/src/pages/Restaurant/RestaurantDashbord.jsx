@@ -13,7 +13,7 @@ const RestaurantDashboard = () => {
   const checkRestaurantStatus = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/restaurant/check-status", {
+      const response = await fetch(" /restaurant/check-status", {
         method: "GET",
         credentials: "include", // Important for session
       });

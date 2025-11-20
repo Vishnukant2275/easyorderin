@@ -87,7 +87,10 @@ const RestoSignUp = () => {
 
     if (!restaurant.seatingCapacity) {
       newErrors.seatingCapacity = "Seating capacity is required";
-    } else if (restaurant.seatingCapacity < 1 || restaurant.seatingCapacity > 500) {
+    } else if (
+      restaurant.seatingCapacity < 1 ||
+      restaurant.seatingCapacity > 500
+    ) {
       newErrors.seatingCapacity = "Seating capacity must be between 1 and 500";
     }
 
@@ -109,7 +112,7 @@ const RestoSignUp = () => {
 
   const sendOtp = async (e) => {
     e.preventDefault();
-    
+
     // Validate email before sending OTP
     if (!restaurant.email.trim()) {
       setErrors({ email: "Email is required" });
@@ -126,7 +129,7 @@ const RestoSignUp = () => {
 
     try {
       const response = await fetch(
-        `/api/restaurant/send-otp?email=${restaurant.email}`
+        ` /restaurant/send-otp?email=${restaurant.email}`
       );
 
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
@@ -164,7 +167,7 @@ const RestoSignUp = () => {
 
     try {
       const response = await fetch(
-        `/api/restaurant/verify-otp?email=${restaurant.email}&otp=${otp}`
+        ` /restaurant/verify-otp?email=${restaurant.email}&otp=${otp}`
       );
 
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
@@ -196,29 +199,29 @@ const RestoSignUp = () => {
 
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ""
+        [name]: "",
       }));
     }
   };
 
   const handleOtpChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6); // Only numbers, max 6 digits
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6); // Only numbers, max 6 digits
     setOtp(value);
-    
+
     // Clear OTP error when user types
     if (errors.otp) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        otp: ""
+        otp: "",
       }));
     }
   };
 
   const handleRegistration = async (e) => {
     e.preventDefault();
-    
+
     // Validate step 2 before submission
     if (!validateStep2()) {
       toast.error("Please fix the errors before submitting");
@@ -234,7 +237,7 @@ const RestoSignUp = () => {
         formData.append(key, restaurant[key]);
       }
 
-      const response = await fetch("/api/restaurant/register", {
+      const response = await fetch(" /restaurant/register", {
         method: "POST",
         body: formData,
       });
@@ -259,26 +262,26 @@ const RestoSignUp = () => {
 
   const nextStep = () => {
     if (validateStep1()) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     } else {
       toast.error("Please fill all required fields correctly");
     }
   };
 
   const prevStep = () => {
-    setCurrentStep(prev => prev - 1);
+    setCurrentStep((prev) => prev - 1);
   };
 
   // Progress Steps
   const steps = [
     { number: 1, title: "Basic Info" },
     { number: 2, title: "Restaurant Details" },
-    { number: 3, title: "Complete" }
+    { number: 3, title: "Complete" },
   ];
 
   return (
     <div className="resto-signup-container">
-      <ToastContainer 
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
@@ -290,7 +293,7 @@ const RestoSignUp = () => {
         pauseOnHover
         theme="light"
       />
-      
+
       <div className="resto-signup-card">
         {/* Header */}
         <div className="resto-signup-header">
@@ -307,7 +310,11 @@ const RestoSignUp = () => {
         <div className="progress-steps">
           {steps.map((step, index) => (
             <div key={step.number} className="step-container">
-              <div className={`step ${currentStep >= step.number ? 'active' : ''} ${currentStep > step.number ? 'completed' : ''}`}>
+              <div
+                className={`step ${
+                  currentStep >= step.number ? "active" : ""
+                } ${currentStep > step.number ? "completed" : ""}`}
+              >
                 {currentStep > step.number ? (
                   <i className="bi bi-check-lg"></i>
                 ) : (
@@ -316,7 +323,11 @@ const RestoSignUp = () => {
               </div>
               <span className="step-label">{step.title}</span>
               {index < steps.length - 1 && (
-                <div className={`step-connector ${currentStep > step.number ? 'active' : ''}`}></div>
+                <div
+                  className={`step-connector ${
+                    currentStep > step.number ? "active" : ""
+                  }`}
+                ></div>
               )}
             </div>
           ))}
@@ -343,10 +354,16 @@ const RestoSignUp = () => {
                     value={restaurant.restaurantName}
                     onChange={handleChange}
                     placeholder="Enter restaurant name"
-                    className={`form-input ${errors.restaurantName ? 'error' : ''}`}
+                    className={`form-input ${
+                      errors.restaurantName ? "error" : ""
+                    }`}
                     required
                   />
-                  {errors.restaurantName && <span className="error-message">{errors.restaurantName}</span>}
+                  {errors.restaurantName && (
+                    <span className="error-message">
+                      {errors.restaurantName}
+                    </span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -360,10 +377,12 @@ const RestoSignUp = () => {
                     value={restaurant.ownerName}
                     onChange={handleChange}
                     placeholder="Enter owner's name"
-                    className={`form-input ${errors.ownerName ? 'error' : ''}`}
+                    className={`form-input ${errors.ownerName ? "error" : ""}`}
                     required
                   />
-                  {errors.ownerName && <span className="error-message">{errors.ownerName}</span>}
+                  {errors.ownerName && (
+                    <span className="error-message">{errors.ownerName}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -377,11 +396,13 @@ const RestoSignUp = () => {
                     value={restaurant.email}
                     onChange={handleChange}
                     placeholder="Enter email address"
-                    className={`form-input ${errors.email ? 'error' : ''}`}
+                    className={`form-input ${errors.email ? "error" : ""}`}
                     disabled={otpVerified}
                     required
                   />
-                  {errors.email && <span className="error-message">{errors.email}</span>}
+                  {errors.email && (
+                    <span className="error-message">{errors.email}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -395,11 +416,17 @@ const RestoSignUp = () => {
                     value={restaurant.contactNumber}
                     onChange={handleChange}
                     placeholder="Enter 10-digit contact number"
-                    className={`form-input ${errors.contactNumber ? 'error' : ''}`}
+                    className={`form-input ${
+                      errors.contactNumber ? "error" : ""
+                    }`}
                     maxLength="10"
                     required
                   />
-                  {errors.contactNumber && <span className="error-message">{errors.contactNumber}</span>}
+                  {errors.contactNumber && (
+                    <span className="error-message">
+                      {errors.contactNumber}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -408,8 +435,12 @@ const RestoSignUp = () => {
                 <div className="otp-section">
                   <button
                     type="button"
-                    className={`otp-btn ${otpVerified ? 'verified' : ''}`}
-                    disabled={!/\S+@\S+\.\S+/.test(restaurant.email) || otpVerified || isLoading}
+                    className={`otp-btn ${otpVerified ? "verified" : ""}`}
+                    disabled={
+                      !/\S+@\S+\.\S+/.test(restaurant.email) ||
+                      otpVerified ||
+                      isLoading
+                    }
                     onClick={sendOtp}
                   >
                     {isLoading ? (
@@ -442,13 +473,15 @@ const RestoSignUp = () => {
                       value={otp}
                       onChange={handleOtpChange}
                       placeholder="Enter the 6-digit OTP"
-                      className={`form-input ${errors.otp ? 'error' : ''}`}
+                      className={`form-input ${errors.otp ? "error" : ""}`}
                       maxLength="6"
                     />
-                    {errors.otp && <span className="error-message">{errors.otp}</span>}
+                    {errors.otp && (
+                      <span className="error-message">{errors.otp}</span>
+                    )}
                   </div>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="verify-otp-btn"
                     onClick={verifyOtp}
                     disabled={isLoading || otp.length !== 6}
@@ -499,10 +532,12 @@ const RestoSignUp = () => {
                     onChange={handleChange}
                     placeholder="Enter complete address"
                     rows="3"
-                    className={`form-textarea ${errors.address ? 'error' : ''}`}
+                    className={`form-textarea ${errors.address ? "error" : ""}`}
                     required
                   ></textarea>
-                  {errors.address && <span className="error-message">{errors.address}</span>}
+                  {errors.address && (
+                    <span className="error-message">{errors.address}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -516,10 +551,12 @@ const RestoSignUp = () => {
                     value={restaurant.city}
                     onChange={handleChange}
                     placeholder="Enter city"
-                    className={`form-input ${errors.city ? 'error' : ''}`}
+                    className={`form-input ${errors.city ? "error" : ""}`}
                     required
                   />
-                  {errors.city && <span className="error-message">{errors.city}</span>}
+                  {errors.city && (
+                    <span className="error-message">{errors.city}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -533,10 +570,12 @@ const RestoSignUp = () => {
                     value={restaurant.state}
                     onChange={handleChange}
                     placeholder="Enter state"
-                    className={`form-input ${errors.state ? 'error' : ''}`}
+                    className={`form-input ${errors.state ? "error" : ""}`}
                     required
                   />
-                  {errors.state && <span className="error-message">{errors.state}</span>}
+                  {errors.state && (
+                    <span className="error-message">{errors.state}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -550,11 +589,13 @@ const RestoSignUp = () => {
                     value={restaurant.pinCode}
                     onChange={handleChange}
                     placeholder="Enter 6-digit pincode"
-                    className={`form-input ${errors.pinCode ? 'error' : ''}`}
+                    className={`form-input ${errors.pinCode ? "error" : ""}`}
                     maxLength="6"
                     required
                   />
-                  {errors.pinCode && <span className="error-message">{errors.pinCode}</span>}
+                  {errors.pinCode && (
+                    <span className="error-message">{errors.pinCode}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -566,16 +607,24 @@ const RestoSignUp = () => {
                     name="restaurantType"
                     value={restaurant.restaurantType}
                     onChange={handleChange}
-                    className={`form-select ${errors.restaurantType ? 'error' : ''}`}
+                    className={`form-select ${
+                      errors.restaurantType ? "error" : ""
+                    }`}
                     required
                   >
-                    <option value="" disabled>Select Type</option>
+                    <option value="" disabled>
+                      Select Type
+                    </option>
                     <option value="dineIn">Dine-In</option>
                     <option value="takeAway">Takeaway</option>
                     <option value="delivery">Delivery</option>
                     <option value="all">All Services</option>
                   </select>
-                  {errors.restaurantType && <span className="error-message">{errors.restaurantType}</span>}
+                  {errors.restaurantType && (
+                    <span className="error-message">
+                      {errors.restaurantType}
+                    </span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -591,10 +640,16 @@ const RestoSignUp = () => {
                     placeholder="Enter capacity"
                     min="1"
                     max="500"
-                    className={`form-input ${errors.seatingCapacity ? 'error' : ''}`}
+                    className={`form-input ${
+                      errors.seatingCapacity ? "error" : ""
+                    }`}
                     required
                   />
-                  {errors.seatingCapacity && <span className="error-message">{errors.seatingCapacity}</span>}
+                  {errors.seatingCapacity && (
+                    <span className="error-message">
+                      {errors.seatingCapacity}
+                    </span>
+                  )}
                 </div>
 
                 <div className="form-group full-width">
@@ -629,10 +684,12 @@ const RestoSignUp = () => {
                     value={restaurant.password}
                     onChange={handleChange}
                     placeholder="Enter password (min 6 characters)"
-                    className={`form-input ${errors.password ? 'error' : ''}`}
+                    className={`form-input ${errors.password ? "error" : ""}`}
                     required
                   />
-                  {errors.password && <span className="error-message">{errors.password}</span>}
+                  {errors.password && (
+                    <span className="error-message">{errors.password}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -646,10 +703,16 @@ const RestoSignUp = () => {
                     value={restaurant.confirmPassword}
                     onChange={handleChange}
                     placeholder="Re-enter password"
-                    className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+                    className={`form-input ${
+                      errors.confirmPassword ? "error" : ""
+                    }`}
                     required
                   />
-                  {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                  {errors.confirmPassword && (
+                    <span className="error-message">
+                      {errors.confirmPassword}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -684,7 +747,10 @@ const RestoSignUp = () => {
                   <i className="bi bi-check-circle"></i>
                 </div>
                 <h3>Registration Successful!</h3>
-                <p>Your restaurant has been registered successfully. You'll receive a confirmation email shortly.</p>
+                <p>
+                  Your restaurant has been registered successfully. You'll
+                  receive a confirmation email shortly.
+                </p>
                 <div className="success-actions">
                   <button className="btn-dashboard">
                     <i className="bi bi-speedometer2"></i>
@@ -702,7 +768,10 @@ const RestoSignUp = () => {
 
         <div className="resto-signup-footer">
           <p>
-            Already have an account? <a href="/restaurant/login" className="login-link">Sign In</a>
+            Already have an account?{" "}
+            <a href="/restaurant/login" className="login-link">
+              Sign In
+            </a>
           </p>
         </div>
       </div>

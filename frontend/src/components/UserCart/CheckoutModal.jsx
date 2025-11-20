@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./UserCart.module.css";
 import UserInfoForm from "./UserInfoForm";
-import api from "../../services/api";
+import api from "../../services ";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 
@@ -127,8 +127,6 @@ const CheckoutModal = ({
         specialInstructions: specialInstructions || "",
         paymentMethod: selectedPaymentMethod,
       };
-
-   
 
       // Call the new merged API route
       const response = await api.post(

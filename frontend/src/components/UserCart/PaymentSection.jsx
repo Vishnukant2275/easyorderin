@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./UserCart.module.css";
-import api from "../../services/api";
+import api from "../../services ";
 
 const PaymentSection = ({
   selectedPaymentMethod,
@@ -40,9 +40,8 @@ const PaymentSection = ({
         description: "Order Payment",
         order_id: data.orderId,
         handler: async function (response) {
-          
           setIsPaymentConfirmed(true);
-          
+
           // Optional: Send payment verification to backend
           // await api.post("/razorpay/verify-payment", response);
         },
@@ -55,10 +54,10 @@ const PaymentSection = ({
           color: "#F37254",
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             setLoadingPayment(false);
-          }
-        }
+          },
+        },
       };
 
       const rzp = new window.Razorpay(options);
@@ -100,7 +99,9 @@ const PaymentSection = ({
             </div>
             <div className={styles.userInfoItem}>
               <span className={styles.userInfoLabel}>Mobile:</span>
-              <span className={styles.userInfoValue}>{userInfo.mobile || userInfo.phone}</span>
+              <span className={styles.userInfoValue}>
+                {userInfo.mobile || userInfo.phone}
+              </span>
             </div>
           </div>
         </div>
@@ -113,8 +114,8 @@ const PaymentSection = ({
           <div className={styles.successContent}>
             <div className={styles.successTitle}>Payment Confirmed!</div>
             <div className={styles.successText}>
-              Your payment of ₹{total.toFixed(2)} has been processed successfully. 
-              Click "Place Order" to complete your order.
+              Your payment of ₹{total.toFixed(2)} has been processed
+              successfully. Click "Place Order" to complete your order.
             </div>
           </div>
         </div>
@@ -122,7 +123,11 @@ const PaymentSection = ({
 
       {/* Payment Options */}
       <div className={styles.paymentOptions}>
-        <label className={`${styles.paymentOption} ${isPaymentConfirmed ? styles.disabledOption : ''}`}>
+        <label
+          className={`${styles.paymentOption} ${
+            isPaymentConfirmed ? styles.disabledOption : ""
+          }`}
+        >
           <input
             type="radio"
             name="paymentMethod"
@@ -185,7 +190,9 @@ const PaymentSection = ({
             {/* Customer Information Preview */}
             {userInfo && (
               <div className={styles.customerPreview}>
-                <div className={styles.customerPreviewTitle}>Customer Information</div>
+                <div className={styles.customerPreviewTitle}>
+                  Customer Information
+                </div>
                 <div className={styles.customerPreviewDetails}>
                   <div className={styles.customerPreviewItem}>
                     <span>Name:</span>
@@ -212,7 +219,7 @@ const PaymentSection = ({
                   </div>
                 </div>
               </div>
-              
+
               <div className={styles.step}>
                 <div className={styles.stepIndicator}>
                   <span className={styles.stepNumber}>2</span>
@@ -224,7 +231,7 @@ const PaymentSection = ({
                   </div>
                 </div>
               </div>
-              
+
               <div className={styles.step}>
                 <div className={styles.stepIndicator}>
                   <span className={styles.stepNumber}>3</span>
@@ -255,16 +262,20 @@ const PaymentSection = ({
                   <>
                     <div className={styles.buttonIcon}>💳</div>
                     <div className={styles.buttonContent}>
-                      <div className={styles.buttonPrimary}>Pay ₹{total.toFixed(2)}</div>
+                      <div className={styles.buttonPrimary}>
+                        Pay ₹{total.toFixed(2)}
+                      </div>
                       <div className={styles.buttonSecondary}>
-                        {userInfo?.name ? `Pay as ${userInfo.name}` : 'Secure Payment • Razorpay'}
+                        {userInfo?.name
+                          ? `Pay as ${userInfo.name}`
+                          : "Secure Payment • Razorpay"}
                       </div>
                     </div>
                     <div className={styles.arrowIcon}>→</div>
                   </>
                 )}
               </button>
-              
+
               <div className={styles.securityNote}>
                 <span className={styles.lockIcon}>🔒</span>
                 Your payment details are secured with 256-bit SSL encryption

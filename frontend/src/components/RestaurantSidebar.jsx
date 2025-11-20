@@ -92,13 +92,12 @@ const RestaurantSidebar = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("/api/restaurant/logout", {
+      const response = await fetch(" /restaurant/logout", {
         method: "POST",
         credentials: "include",
       });
 
       if (response.ok) {
-       
         sessionStorage.removeItem("isLoggedIn");
         window.location.href = "/restaurant/login";
       } else {
