@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useRestaurant } from "../../context/RestaurantContext";
-
+import NotActive from "../../components/NotActive";
 const Served = ({ updateOrderStatus }) => {
   const { orders, menuItems } = useRestaurant();
   const [searchTerm, setSearchTerm] = useState("");
@@ -103,7 +103,8 @@ const Served = ({ updateOrderStatus }) => {
   const renderServedOrderCard = (order) => {
     const total = calculateOrderTotal(order);
 
-    return (
+    return (<>
+    <NotActive/>
       <div key={order._id} className="col-md-6 col-lg-4">
         <div
           className="card h-100 border-success"
@@ -206,11 +207,12 @@ const Served = ({ updateOrderStatus }) => {
             </div>
           </div>
         </div>
-      </div>
+      </div></>
     );
   };
 
-  return (
+  return (<>
+    <NotActive/>
     <div className="container-fluid">
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -316,7 +318,7 @@ const Served = ({ updateOrderStatus }) => {
           </div>
         </div>
       )}
-    </div>
+    </div></>
   );
 };
 

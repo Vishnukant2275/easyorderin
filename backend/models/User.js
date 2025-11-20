@@ -21,6 +21,12 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
 
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
+
     currentOrder: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
@@ -34,6 +40,7 @@ const userSchema = new mongoose.Schema(
       },
     ],
   },
+
   { timestamps: true }
 );
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './AdminHeader.css';
+import { useEffect } from 'react';
 
 const AdminHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,11 +16,45 @@ const AdminHeader = () => {
     { name: 'Analytics', path: '/admin/analytics', icon: '📈' },
   ];
 
-  const handleLogout = () => {
-    // Add logout logic here
-   
-    navigate('/admin/login');
-  };
+const handleLogout = async () => {
+  try {
+    // Make API call to logout endpoint
+    const response = await fetch('/api/admin/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}` // or however you store your token
+      }
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // Clear client-side storage
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      sessionStorage.removeItem('adminToken');
+      
+      // Clear any cookies if used
+      document.cookie = 'adminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      
+      // Redirect to login page
+      window.location.href = '/admin/login';
+    } else {
+      console.error('Logout failed:', data.message);
+      // Fallback: clear storage anyway and redirect
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      window.location.href = '/admin/login';
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Fallback: clear storage and redirect on error
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    window.location.href = '/admin/login';
+  }
+};
 
   const isActivePath = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');

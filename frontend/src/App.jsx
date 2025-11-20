@@ -33,7 +33,7 @@ function App() {
           element={<UserRouter />}
         />
         <Route path="/admin/*" element={<AdminRouter />} />
-         <Route path="*" element={<PageNotFound/>} />
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
       <ToastContainer
         position="top-right"

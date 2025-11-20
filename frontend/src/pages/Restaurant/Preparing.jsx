@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRestaurant } from "../../context/RestaurantContext";
 import api from "../../services/api";
-
+import NotActive from "../../components/NotActive";
 const Preparing = () => {
   const { orders, menuItems, loading, setRefreshTrigger, refreshTrigger } =
     useRestaurant();
@@ -139,6 +139,9 @@ const Preparing = () => {
       0
     );
   };
+const handleCloseAlert = () => {
+    console.log("User closed the inactive alert");
+  };
 
   // 🔹 Render helpers
   const renderOrderCard = (order) => {
@@ -146,7 +149,12 @@ const Preparing = () => {
     const timeClass = getTimeAlertClass(minutes);
     const total = calculateOrderTotal(order);
 
-    return (
+    return (<> <NotActive
+          message="New orders are disabled while your account is inactive."
+          variant="card"
+          showRefreshButton={false}
+          onClose={handleCloseAlert}
+        />
       <div key={order._id} className="col-md-6 col-lg-4">
         <div
           className={`card h-100 border-${timeClass}`}
@@ -260,13 +268,18 @@ const Preparing = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div></>
     );
   };
 
   // 🔹 Empty state for preparing orders
   if (filteredOrders.length === 0) {
-    return (
+    return (<> <NotActive
+          message="New orders are disabled while your account is inactive."
+          variant="card"
+          showRefreshButton={false}
+          onClose={handleCloseAlert}
+        />
       <div className="container-fluid">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -343,7 +356,7 @@ const Preparing = () => {
             </div>
           </div>
         )}
-      </div>
+      </div></>
     );
   }
 

@@ -16,8 +16,14 @@ const restaurantSchema = new mongoose.Schema({
     default: 'dineIn',
     required: true
   },
+  GST: { type: String, required: true, unique: true },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
   logoImage: { type: String },
   seatingCapacity: { type: Number, required: true },
 }, { timestamps: true });
+module.exports = mongoose.models.Restaurant || mongoose.model("Restaurant", restaurantSchema);
 
-module.exports = mongoose.model('Restaurant', restaurantSchema);

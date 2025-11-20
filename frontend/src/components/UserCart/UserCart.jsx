@@ -30,10 +30,12 @@ const UserCart = () => {
   } = useUserCart(restaurantID, tableNumber);
 
   const subtotal = getCartTotal();
-  const tax = subtotal * 0.05;
+  const sgst = subtotal * 0.025;
+  const cgst = subtotal * 0.025;
   const deliveryFee = 0;
-  const total = subtotal + tax + deliveryFee;
+  const total = subtotal + sgst + cgst + deliveryFee;
   const totalItems = getTotalItems();
+  const GST = restaurantInfo?.GST || null ;
 
   if (!restaurantInfo) {
     return (
@@ -87,10 +89,12 @@ const UserCart = () => {
             
             <OrderSummary 
               subtotal={subtotal}
-              tax={tax}
+              sgst={sgst}
+              cgst={cgst}
               deliveryFee={deliveryFee}
               total={total}
               totalItems={totalItems}
+              GST={GST||"Not available"}
             />
 
             <div className={styles.specialInstructions}>

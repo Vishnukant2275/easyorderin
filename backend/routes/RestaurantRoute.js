@@ -16,6 +16,85 @@ const upload = multer({ storage });
 const { sendRestaurantOtp } = require("../mail/RestaurantMail");
 const restaurant = require("../models/restaurant");
 
+
+// Place this BEFORE any :id parameter routes
+router.get("/status/current", async (req, res) => {
+  try {
+    if (!req.session.restaurantId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated"
+      });
+    }
+
+    const restaurant = await Restaurant.findById(req.session.restaurantId);
+    
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      status: restaurant.status,
+      message: restaurant.status !== "active" 
+        ? "This restaurant is currently inactive. Please contact support to activate your account."
+        : "Restaurant is active"
+    });
+
+  } catch (error) {
+    console.error('Status check error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while checking status"
+    });
+  }
+});
+
+router.get("/check-status", async (req, res) => {
+  try {
+    // Check if restaurant is authenticated via session
+    if (!req.session.restaurantId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    // Get fresh data from database
+    const restaurant = await Restaurant.findById(req.session.restaurantId);
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
+    }
+
+    // Return current status
+    res.json({
+      success: true,
+      status: restaurant.status,
+      message:
+        restaurant.status !== "active"
+          ? "This restaurant is currently inactive. Please contact support to activate your account."
+          : "Restaurant is active",
+      restaurant: {
+        name: restaurant.restaurantName,
+        email: restaurant.email,
+        status: restaurant.status,
+      },
+    });
+  } catch (error) {
+    console.error("Status check error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while checking status",
+    });
+  }
+});
 //send otp
 router.get("/send-otp", async (req, res) => {
   const email = req.query.email;
@@ -30,7 +109,7 @@ router.get("/send-otp", async (req, res) => {
   sendRestaurantOtp(email);
   res.json({ success: true, message: "OTP sent" });
 });
-
+//verify otp
 router.get("/verify-otp", async (req, res) => {
   const { email, otp } = req.query;
 
@@ -361,6 +440,13 @@ router.get("/:restaurantID/table/:tableNumber/getMenu", async (req, res) => {
       });
     }
 
+    if (restaurant.status !== "active") {
+      return res.status(403).json({
+        success: false,
+        message: "This restaurant is currently inactive",
+      });
+    }
+
     // 2️⃣ Find tables data for restaurant
     const tablesData = await Tables.findOne({ restaurantId: restaurantID });
     if (!tablesData) {
@@ -492,10 +578,10 @@ router.get("/:restaurantId", async (req, res) => {
         id: restaurant._id,
         restaurantName: restaurant.restaurantName,
         restaurantType: restaurant.restaurantType,
-        // Add other fields you need for the header
         address: restaurant.address,
         phone: restaurant.phone,
         logo: restaurant.logo,
+        GST: restaurant.GST,
         // Include any other fields you want to expose
       },
     });
@@ -530,15 +616,22 @@ router.post("/login", async (req, res) => {
         id: verified._id,
         email: verified.email,
         name: verified.restaurantName,
+        status: verified.status, // Include status in session
       };
 
       // ✅ Also store restaurantId separately for easy access
       req.session.restaurantId = verified._id;
 
+      // Return success but include status information
       res.json({
         success: true,
-        message: "ID verified",
+        message:
+          verified.status === "active"
+            ? "Login successful"
+            : "Login successful - Account is currently inactive",
         restaurant: req.session.restaurant,
+        status: verified.status,
+        inactive: verified.status !== "active", // Flag to indicate inactive status
       });
     } else {
       res.json({ success: false, message: "Email or password incorrect" });
@@ -548,6 +641,7 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+// routes/restaurant.js - Add this endpoint
 
 router.post("/logout", (req, res) => {
   // Destroy session
@@ -577,7 +671,13 @@ router.post("/upload/menu", upload.array("image"), async (req, res) => {
 
     const images = req.files || [];
     const restaurantId = req.session?.restaurant?.id;
-
+    const restaurant = Restaurant.findById(restaurantId);
+    if (restaurant.status !== "active") {
+      return res.status(403).json({
+        success: false,
+        message: "This restaurant is currently inactive",
+      });
+    }
     if (!restaurantId) {
       return res.status(400).json({ msg: "Restaurant session missing" });
     }
@@ -734,7 +834,9 @@ router.delete("/delete-paymentqr/:qrId", async (req, res) => {
   }
 });
 // ✅ Place order for a specific restaurant and table
-router.post("/:restaurantID/table/:tableNumber/placeOrder",  async (req, res) => {
+router.post(
+  "/:restaurantID/table/:tableNumber/placeOrder",
+  async (req, res) => {
     try {
       const { restaurantID, tableNumber } = req.params;
       const { menuItems, name, phone, specialInstructions, paymentMethod } =
@@ -836,34 +938,33 @@ router.post("/:restaurantID/table/:tableNumber/placeOrder",  async (req, res) =>
       // 7️⃣ Find or create user
       let user;
       const existingUser = await User.findOne({ phone });
-if (existingUser) {
-  // Override the existing user's name
-  existingUser.name = name.trim();
+      if (existingUser) {
+        // Override the existing user's name
+        existingUser.name = name.trim();
+        existingUser.status = "active";
+        await existingUser.save();
 
-  await existingUser.save();
-
-  user = existingUser;
-  console.log(`Updated existing user: ${user.name} (${user.phone})`);
-
-} else {
-  // Create new user
-  try {
-    user = new User({
-      name: name.trim(),
-      phone: phone.trim(),
-    });
-    await user.save();
-    console.log(`Created new user: ${user.name} (${user.phone})`);
-  } catch (userError) {
-    if (userError.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "Phone number already registered with another user",
-      });
-    }
-    throw userError;
-  }
-}
+        user = existingUser;
+        console.log(`Updated existing user: ${user.name} (${user.phone})`);
+      } else {
+        // Create new user
+        try {
+          user = new User({
+            name: name.trim(),
+            phone: phone.trim(),
+          });
+          await user.save();
+          console.log(`Created new user: ${user.name} (${user.phone})`);
+        } catch (userError) {
+          if (userError.code === 11000) {
+            return res.status(409).json({
+              success: false,
+              message: "Phone number already registered with another user",
+            });
+          }
+          throw userError;
+        }
+      }
 
       // 8️⃣ Create new order
       const newOrder = await Order.create({

@@ -150,11 +150,12 @@ app.set('io', io);
 const restaurantRoutes = require("./routes/RestaurantRoute");
 const userRoutes = require("./routes/UserRoute");
 const authRoutes = require("./routes/AuthRouter");
-
+const adminRoutes = require("./routes/AdminRouter");
 // 11. Use Routes
 app.use("/api/restaurant", restaurantRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/razorpay", require("./routes/RazorpayRoute"));
 // 12. Default Route
 app.get("/api", (req, res) => {

@@ -116,7 +116,7 @@ const Menu = () => {
       }
     } catch (error) {
       console.error(error);
-      toast.warn("Something went wrong");
+      toast.warn(error?.response?.data?.message || "An error occurred" );
     }
     setRefreshTrigger((prev) => prev + 1);
   };

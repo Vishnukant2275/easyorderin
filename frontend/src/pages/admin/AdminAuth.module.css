@@ -1,0 +1,366 @@
+.authContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.authCard {
+  background: white;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.authHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.logoIcon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.logoText {
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.authTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 0.5rem 0;
+}
+
+.authSubtitle {
+  font-size: 1rem;
+  color: #718096;
+  margin: 0;
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.formInput,
+.formSelect {
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.formInput:focus,
+.formSelect:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.formInput:disabled,
+.formSelect:disabled {
+  background: #f7fafc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.submitButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.submitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.errorAlert,
+.successAlert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.errorAlert {
+  background: #fed7d7;
+  color: #c53030;
+  border: 1px solid #feb2b2;
+}
+
+.successAlert {
+  background: #c6f6d5;
+  color: #276749;
+  border: 1px solid #9ae6b4;
+}
+
+.errorIcon,
+.successIcon {
+  font-size: 1.1rem;
+}
+
+.termsAgreement {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.termsText {
+  font-size: 0.85rem;
+  color: #718096;
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.termsLink {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.termsLink:hover {
+  text-decoration: underline;
+}
+
+.authFooter {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.footerText {
+  font-size: 0.9rem;
+  color: #718096;
+  margin: 0 0 0.5rem 0;
+}
+
+.footerLink {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+}
+
+.helpText {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  margin: 0;
+}
+
+.helpLink {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.helpLink:hover {
+  text-decoration: underline;
+}
+
+/* Background Section */
+.authBackground {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.backgroundPattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(1deg); }
+}
+
+.welcomeMessage {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: white;
+  max-width: 400px;
+}
+
+.welcomeMessage h3 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.welcomeMessage p {
+  font-size: 1.1rem;
+  margin: 0 0 2rem 0;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.featuresList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.featureItem:hover {
+  transform: translateX(10px);
+}
+
+.featureIcon {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .authContainer {
+    grid-template-columns: 1fr;
+  }
+  
+  .authBackground {
+    display: none;
+  }
+  
+  .authCard {
+    box-shadow: none;
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .authCard {
+    padding: 1.5rem;
+  }
+  
+  .logo {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .logoText {
+    font-size: 1.5rem;
+  }
+  
+  .authTitle {
+    font-size: 1.75rem;
+  }
+  
+  .featureItem {
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .authCard {
+    padding: 1rem;
+  }
+  
+  .formInput,
+  .formSelect {
+    padding: 10px 12px;
+  }
+  
+  .submitButton {
+    padding: 12px 16px;
+  }
+}

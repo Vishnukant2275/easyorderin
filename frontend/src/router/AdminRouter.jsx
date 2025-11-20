@@ -6,6 +6,10 @@ import PageNotFound from '../pages/PageNotFound'
 import Dashboard from '../pages/admin/Dashboard'
 import Users from '../pages/admin/Users'
 import Restaurants from '../pages/admin/Restaurants'
+import InvoiceGenerator from '../pages/admin/InvoiceGenerator'
+import HardcopyRegister from '../pages/admin/HardcopyRegister'
+import AdminLogin from '../pages/admin/AdminLogin'
+import AdminSignup from '../pages/admin/AdminSignup'
 // import Settings from '../pages/admin/Settings'
 
 const AdminRouter = () => {
@@ -17,6 +21,10 @@ const AdminRouter = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="restaurants" element={<Restaurants />} />
         <Route path="users" element={<Users />} />
+        <Route path="revenue" element={<InvoiceGenerator />} />
+        <Route path="analytics" element={<HardcopyRegister />} />
+        <Route path='login' element={<AdminLogin/>}/>
+         <Route path='signup' element={<AdminSignup/>}/>
         {/* <Route path="settings" element={<Settings />} /> */}
         
         {/* Catch-all route for admin 404 */}

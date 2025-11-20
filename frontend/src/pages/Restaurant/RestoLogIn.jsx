@@ -32,32 +32,47 @@ const RestoLogIn = () => {
   }, []);
 
   // Existing handleSubmit function remains the same
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch("/api/restaurant/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-        credentials: "include", // ✅ THIS IS CRUCIAL
-      });
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await fetch("/api/restaurant/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+      credentials: "include", // ✅ THIS IS CRUCIAL
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (data.success) {
-        toast.success("Email and password matched successfully");
-        sessionStorage.setItem("isLoggedIn", "true");
-        window.location.href = "/dashboard";
+    if (data.success) {
+      // Store login status
+      sessionStorage.setItem("isLoggedIn", "true");
+      
+      if (data.inactive) {
+        // Restaurant is inactive - store message and show warning
+        localStorage.setItem('inactiveRestaurantMessage', 
+          "This restaurant is currently inactive. Please contact support to activate your account.");
+        
+        toast.warn(data.message); // "Login successful - Account is currently inactive"
       } else {
-        toast.error(data.message);
+        // Restaurant is active - clear any previous inactive messages
+        localStorage.removeItem('inactiveRestaurantMessage');
+        toast.success(data.message); // "Login successful"
       }
-    } catch (err) {
-    
-      toast.error("Server error");
+      
+      // Redirect to dashboard in both cases
+      window.location.href = "/dashboard";
+      
+    } else {
+      toast.error(data.message);
     }
-  };
+  } catch (err) {
+    console.error('Login error:', err);
+    toast.error("Server error");
+  }
+};
 
   const handleChange = (e) => {
     setFormData({

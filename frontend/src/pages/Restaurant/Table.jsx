@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import api from "../../services/api";
 import { useRestaurant } from "../../context/RestaurantContext";
+import NotActive from "../../components/NotActive";
 
 const Table = () => {
   const { table, setTable, setRefreshTrigger, restaurant } = useRestaurant();
@@ -192,7 +193,8 @@ const Table = () => {
     }, 0);
   };
 
-  return (
+  return (<>
+  <NotActive/>
     <div className="container-fluid">
       {/* Header and Stats */}
       <div className="row mb-4">
@@ -341,7 +343,7 @@ const Table = () => {
                     >
                       <QRCodeSVG
                         ref={(el) => (qrRefs.current[tableItem._id] = el)}
-                        value={`     http://10.143.23.32:5173/restaurant/${restaurant._id}/table/${tableItem.tableNumber}/getMenu`}
+                        value={`     http://172.22.187.32:5173/restaurant/${restaurant._id}/table/${tableItem.tableNumber}/getMenu`}
                         size={qrSize}
                         level="H"
                         includeMargin={true}
@@ -520,7 +522,7 @@ const Table = () => {
           </div>
         </div>
       )}
-    </div>
+    </div></>
   );
 };
 
