@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:5000", // your backend URL
+        target: "https://easyorderin.onrender.com", // your backend URL
         changeOrigin: true,
       },
     },
