@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AboutPage from "./pages/AboutPage";
 // routers import
-import RestaurantRouter from "./router/RestaurantRouter.jsx";
+import RestaurantRouter from "./router/Restaurantrouter.jsx";
 import UserRouter from "./router/UserRouter.jsx";
 
 import "bootstrap/dist/css/bootstrap.min.css";
