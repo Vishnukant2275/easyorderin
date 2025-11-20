@@ -5,7 +5,7 @@ import VideoSection from "../components/VideoSection";
 import TestimonialsSection from "../components/TestimonialsSection";
 import PricingSection from "../components/PricingSection";
 import FAQSection from "../components/FAQSection";
-import "../../src/app.css";
+import "../../src/App.css";
 function AboutPage() {
   return (
     <>
