@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import ChatBox from "../components/ChantBox";
+
 import api from "../services/api";
 const RestaurantContext = createContext();
 
