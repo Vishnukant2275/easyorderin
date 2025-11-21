@@ -1,7 +1,3 @@
-/************************************************************
- * index.js - Main Server Entry Point (with Socket.IO)
- ************************************************************/
-
 // 1. Import core packages
 const express = require("express");
 const dotenv = require("dotenv");
@@ -10,7 +6,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const http = require("http");
-const { Server } = require("socket.io");
+
 // 2. Load environment variables
 dotenv.config();
 const Razorpay = require("razorpay");
@@ -67,13 +63,6 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 
-// 7. Socket.IO setup with session support
-
-
-
-
-
-
 // 10. Import Routes
 const restaurantRoutes = require("./routes/RestaurantRoute");
 const userRoutes = require("./routes/UserRoute");
@@ -112,4 +101,4 @@ server.listen(PORT, () => {
 });
 
 // Export for testing
-module.exports = { app, server};
+module.exports = { app, server };
