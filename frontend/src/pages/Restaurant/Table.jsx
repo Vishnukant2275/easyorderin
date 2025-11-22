@@ -343,7 +343,7 @@ const Table = () => {
                       >
                         <QRCodeSVG
                           ref={(el) => (qrRefs.current[tableItem._id] = el)}
-                          value={`${import.meta.env.VITE_API_URL}/restaurant/${
+                          value={`${import.meta.env.VITE_SELF_API_URL}/restaurant/${
                             restaurant._id
                           }/table/${tableItem.tableNumber}/getMenu`}
                           size={qrSize}
