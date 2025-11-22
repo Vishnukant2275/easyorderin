@@ -305,9 +305,13 @@ const UserMenu = () => {
                       {/* Menu Item Image */}
                       <div className="item-image">
                         <img
-                          src={`${
-                            import.meta.env.VITE_API_URL
-                          }/restaurant/image/${item.image}`}
+                          src={
+                            item.image?.startsWith("http")
+                              ? item.image
+                              : `${
+                                  import.meta.env.VITE_API_URL
+                                }/restaurant/image/${item.image}`
+                          }
                           alt={item.name}
                           className="menu-img"
                           onError={(e) => {
@@ -315,6 +319,7 @@ const UserMenu = () => {
                               "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='16' fill='%23666'%3E🍽️ Menu Image%3C/text%3E%3C/svg%3E";
                           }}
                         />
+
                         <div className="image-overlay"></div>
                       </div>
                       <div className="item-content">
