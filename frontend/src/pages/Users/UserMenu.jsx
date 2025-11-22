@@ -42,9 +42,13 @@ const UserMenu = () => {
           return;
         }
 
+        console.log("Fetching menu for:", { restaurantID, tableNumber });
+
         const res = await api.get(
           `/restaurant/${restaurantID}/table/${tableNumber}/getMenu`
         );
+
+        console.log("API Response:", res.data);
 
         if (res.data.success) {
           // Set restaurant info
@@ -54,20 +58,35 @@ const UserMenu = () => {
           });
 
           const menuData = res.data.menu || [];
+          console.log("Raw menu data:", menuData);
 
-          setMenuItems(
-            menuData.map((item) => ({
+          // Process menu items with image URLs
+          const processedItems = menuData.map((item) => {
+            const imageUrl = `${
+              import.meta.env.VITE_API_URL
+            }/api/restaurant/image/${item._id || item.id}`;
+
+            console.log(`Processing item: ${item.name}`, {
+              itemId: item._id || item.id,
+              imageUrl: imageUrl,
+              hasImageData: !!item.image, // Check if backend sends image data info
+            });
+
+            return {
               id: item._id || item.id,
               name: item.name,
               price: item.price,
               category: item.foodCategory || "main-course",
               isVegetarian: item.isVegetarian || false,
               description: item.description,
-              image: `${import.meta.env.VITE_API_URL}${item.imageURL}`,
+              image: imageUrl,
               isAvailable: item.isAvailable,
               popular: item.popular || false,
-            }))
-          );
+            };
+          });
+
+          console.log("Processed items:", processedItems);
+          setMenuItems(processedItems);
         } else {
           setError(res.data.message || "Failed to fetch menu");
           setMenuItems([]);
@@ -165,6 +184,25 @@ const UserMenu = () => {
     setSelectedCategory("");
     setShowCategoryFilter(false);
   };
+
+  // Test image loading function
+  const testImageLoad = (imageUrl, itemName) => {
+    const img = new Image();
+    img.onload = () => console.log(`✅ Image loaded successfully: ${itemName}`);
+    img.onerror = () =>
+      console.log(`❌ Failed to load image: ${itemName}`, imageUrl);
+    img.src = imageUrl;
+  };
+
+  // Test all images when menuItems change
+  useEffect(() => {
+    if (menuItems.length > 0) {
+      console.log("Testing image URLs for all items:");
+      menuItems.forEach((item) => {
+        testImageLoad(item.image, item.name);
+      });
+    }
+  }, [menuItems]);
 
   const cartTotal = getCartTotal();
   const totalItems = getTotalItems();
@@ -309,9 +347,16 @@ const UserMenu = () => {
                           alt={item.name}
                           className="menu-img"
                           onError={(e) => {
+                            console.error(
+                              `❌ Image failed to load: ${item.name}`,
+                              item.image
+                            );
                             e.target.src =
                               "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='16' fill='%23666'%3E🍽️ Menu Image%3C/text%3E%3C/svg%3E";
                           }}
+                          onLoad={() =>
+                            console.log(`✅ Image loaded: ${item.name}`)
+                          }
                         />
 
                         <div className="image-overlay"></div>
