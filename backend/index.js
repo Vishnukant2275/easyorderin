@@ -1,34 +1,74 @@
-// 1. Import core packages
+// ===============================
+// 1. Core imports
+// ===============================
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+const bodyParser = require("body-parser");
 const http = require("http");
 
-// 2. Load environment variables
+// Load env
 dotenv.config();
-const Razorpay = require("razorpay");
 
-const bodyParser = require("body-parser");
-
-// 3. Create express app & HTTP server
+// Express app
 const app = express();
-app.set("trust proxy", 1);
 
+// ===============================
+// 2. MUST BE FIRST — TRUST PROXY
+// ===============================
+app.set("trust proxy", 1); // critical for Render HTTPS cookies
+
+// Create HTTP server
 const server = http.createServer(app);
-app.use(bodyParser.json());
 
-// 4. Connect to Database
+// ===============================
+// 3. Global Middlewares
+// ===============================
+
+// ---- CORS MUST COME BEFORE SESSION ----
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  })
+);
+
+// Body parser
+app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Safe Helmet (default blocks cross-site cookies)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// Cookies
+app.use(cookieParser());
+
+// Logging
+app.use(morgan("dev"));
+
+// Serve uploads
+app.use("/uploads", express.static("uploads"));
+
+// ===============================
+// 4. Database Connection
+// ===============================
 const connectDB = require("./config/db");
 connectDB();
 
-// 5. Session configuration (FIXED - only one session middleware)
-const session = require("express-session");
-const MongoStore = require("connect-mongo");
-
-// Session middleware (only define once)
+// ===============================
+// 5. Sessions (AFTER CORS, BEFORE ROUTES)
+// ===============================
 app.use(
   session({
     name: "sessionId",
@@ -38,68 +78,52 @@ app.use(
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
       collectionName: "sessions",
-      ttl: 24 * 60 * 60,
+      ttl: 24 * 60 * 60, // 1 day
     }),
     cookie: {
-      secure: true,
+      secure: true, // required for Render HTTPS
       httpOnly: true,
-      sameSite: "none",
+      sameSite: "none", // required for cross-site cookie
       maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
 
-// 6. Global Middlewares
-app.use("/uploads", express.static("uploads"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(
-  cors({
-    credentials: true,
-    origin: process.env.CLIENT_URL,
-  })
-);
-app.use(helmet());
-app.use(morgan("dev"));
-app.use(cookieParser());
+// ===============================
+// 6. Routes
+// ===============================
 app.set("view engine", "ejs");
 
-// 10. Import Routes
 const restaurantRoutes = require("./routes/RestaurantRoute");
 const userRoutes = require("./routes/UserRoute");
 const authRoutes = require("./routes/AuthRouter");
 const adminRoutes = require("./routes/AdminRouter");
-// 11. Use Routes
+const razorpayRoutes = require("./routes/RazorpayRoute");
+
 app.use("/restaurant", restaurantRoutes);
 app.use("/user", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
-app.use("/razorpay", require("./routes/RazorpayRoute"));
-// 12. Default Route
+app.use("/razorpay", razorpayRoutes);
+
+// Default API
 app.get("/api", (req, res) => {
-  res.json({ title: "Welcome", message: "API is running..." });
+  res.json({ message: "API running..." });
 });
 
-// 13. Session check routes (for testing)
+// Debug session route
 app.get("/api/session-check", (req, res) => {
   res.json({
     session: req.session,
-    userAuth: req.session.userAuth,
-    restaurantAuth: req.session.restaurantAuth,
   });
 });
 
-// 14. Start server
+// ===============================
+// 7. Start Server
+// ===============================
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-  console.log(
-    `✅ Server running in ${
-      process.env.NODE_ENV || "development"
-    } mode on port http://localhost:${PORT}/api`
-  );
-  console.log(`🔗 CORS enabled for: ${process.env.CLIENT_URL}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Frontend allowed: ${process.env.CLIENT_URL}`);
 });
-
-// Export for testing
-module.exports = { app, server };
