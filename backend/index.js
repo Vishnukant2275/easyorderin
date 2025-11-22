@@ -99,7 +99,7 @@ const userRoutes = require("./routes/UserRoute");
 const authRoutes = require("./routes/AuthRouter");
 const adminRoutes = require("./routes/AdminRouter");
 const razorpayRoutes = require("./routes/RazorpayRoute");
-
+app.use("/api/restaurant", restaurantRoutes);
 app.use("/restaurant", restaurantRoutes);
 app.use("/user", userRoutes);
 app.use("/auth", authRoutes);
