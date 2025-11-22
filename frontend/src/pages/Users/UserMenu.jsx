@@ -63,7 +63,7 @@ const UserMenu = () => {
               category: item.foodCategory || "main-course",
               isVegetarian: item.isVegetarian || false,
               description: item.description,
-              image: `${import.meta.env.VITE_API_URL}${item.imageUrl}`,
+              image: item.imageId,
               isAvailable: item.isAvailable,
               popular: item.popular || false,
             }))
