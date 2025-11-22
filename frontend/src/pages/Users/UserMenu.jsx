@@ -63,7 +63,9 @@ const UserMenu = () => {
               category: item.foodCategory || "main-course",
               isVegetarian: item.isVegetarian || false,
               description: item.description,
-              image: item.imageId,
+              image: `${import.meta.env.VITE_API_URL}/restaurant/image/${
+                item.image
+              }`,
               isAvailable: item.isAvailable,
               popular: item.popular || false,
             }))
@@ -305,13 +307,7 @@ const UserMenu = () => {
                       {/* Menu Item Image */}
                       <div className="item-image">
                         <img
-                          src={
-                            item.image?.startsWith("http")
-                              ? item.image
-                              : `${
-                                  import.meta.env.VITE_API_URL
-                                }/restaurant/image/${item.image}`
-                          }
+                          src={item.image}
                           alt={item.name}
                           className="menu-img"
                           onError={(e) => {
