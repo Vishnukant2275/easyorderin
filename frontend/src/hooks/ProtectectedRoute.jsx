@@ -1,4 +1,3 @@
-// src/hooks/ProtectedRoute.jsx
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import axios from "axios";
@@ -10,9 +9,12 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await axios.get(" /auth/check-session", {
-          withCredentials: true, // ✅ send session cookie
-        });
+        const res = await axios.get(
+          import.meta.env.VITE_API_URL + "/auth/check-session",
+          {
+            withCredentials: true, // send cookies
+          }
+        );
 
         if (res.data.loggedIn) {
           setIsValidSession(true);

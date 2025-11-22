@@ -137,7 +137,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 require("dotenv").config();
 router.get("/me", async (req, res) => {
   try {
@@ -739,8 +738,7 @@ router.post("/upload/menu", upload.array("image"), async (req, res) => {
 });
 //payment qr code upload
 
-router.post(
-  "/upload-paymentqr",
+router.post("/upload-paymentqr",
   upload.array("files", 10),
   async (req, res) => {
     try {
@@ -834,8 +832,7 @@ router.delete("/delete-paymentqr/:qrId", async (req, res) => {
   }
 });
 // ✅ Place order for a specific restaurant and table
-router.post(
-  "/:restaurantID/table/:tableNumber/placeOrder",
+router.post("/:restaurantID/table/:tableNumber/placeOrder",
   async (req, res) => {
     try {
       const { restaurantID, tableNumber } = req.params;

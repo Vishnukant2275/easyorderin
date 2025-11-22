@@ -10,12 +10,16 @@ const UserProtectedRoute = ({ children }) => {
   useEffect(() => {
     const checkUserSession = async () => {
       try {
-        const res = await axios.get(" /auth/check-auth", {
-          withCredentials: true, // important for cookie/session
-        });
+        const res = await axios.get(
+          import.meta.env.VITE_API_URL + "/auth/check-auth",
+          {
+            withCredentials: true, // send session cookie
+          }
+        );
 
         if (res.data.loggedIn) {
           setIsValidSession(true);
+          sessionStorage.setItem("userLoggedIn", "true");
         } else {
           setIsValidSession(false);
           sessionStorage.removeItem("userLoggedIn");
