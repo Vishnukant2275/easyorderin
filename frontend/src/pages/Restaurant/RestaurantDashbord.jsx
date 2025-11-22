@@ -13,10 +13,13 @@ const RestaurantDashboard = () => {
   const checkRestaurantStatus = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(" /restaurant/check-status", {
-        method: "GET",
-        credentials: "include", // Important for session
-      });
+      const response = await fetch(
+        import.meta.env.VITE_API_URL + "/restaurant/check-status",
+        {
+          method: "GET",
+          credentials: "include", // Important for session
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();

@@ -33,7 +33,7 @@ const Payment = () => {
       setLoading(true);
       setError("");
 
-      const res = await axios.get(" /restaurant/get-paymentqr", {
+      const res = await axios.get("/api/restaurant/get-paymentqr", {
         withCredentials: true,
       });
 
@@ -85,7 +85,7 @@ const Payment = () => {
     try {
       setUploading(true);
       const response = await axios.post(
-        " /restaurant/upload-paymentqr",
+        "/api/restaurant/upload-paymentqr",
         submitData,
         {
           headers: {
@@ -121,7 +121,7 @@ const Payment = () => {
 
   const deletePaymentMethod = async (qrId) => {
     try {
-      const res = await axios.delete(` /restaurant/delete-paymentqr/${qrId}`, {
+      const res = await axios.delete(`/api/restaurant/delete-paymentqr/${qrId}`, {
         withCredentials: true,
       });
 

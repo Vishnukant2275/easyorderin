@@ -343,7 +343,9 @@ const Table = () => {
                       >
                         <QRCodeSVG
                           ref={(el) => (qrRefs.current[tableItem._id] = el)}
-                          value={`     http://172.22.187.32:5173/restaurant/${restaurant._id}/table/${tableItem.tableNumber}/getMenu`}
+                          value={`${import.meta.env.VITE_API_URL}/restaurant/${
+                            restaurant._id
+                          }/table/${tableItem.tableNumber}/getMenu`}
                           size={qrSize}
                           level="H"
                           includeMargin={true}

@@ -129,7 +129,9 @@ const RestoSignUp = () => {
 
     try {
       const response = await fetch(
-        ` /restaurant/send-otp?email=${restaurant.email}`
+        `${import.meta.env.VITE_API_URL}/restaurant/send-otp?email=${
+          restaurant.email
+        }`
       );
 
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
@@ -166,8 +168,7 @@ const RestoSignUp = () => {
       toast.error(`Failed to verify OTP. ${error || ""}`);
 
     try {
-      const response = await fetch(
-        ` /restaurant/verify-otp?email=${restaurant.email}&otp=${otp}`
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/restaurant/verify-otp?email=${restaurant.email}&otp=${otp}`
       );
 
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
@@ -237,10 +238,13 @@ const RestoSignUp = () => {
         formData.append(key, restaurant[key]);
       }
 
-      const response = await fetch(" /restaurant/register", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        import.meta.env.VITE_API_URL + "/restaurant/register",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
