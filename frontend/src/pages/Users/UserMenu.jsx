@@ -42,7 +42,8 @@ const UserMenu = () => {
           return;
         }
 
-        const res = await api.get(`/restaurant/${restaurantID}/table/${tableNumber}/getMenu`
+        const res = await api.get(
+          `/restaurant/${restaurantID}/table/${tableNumber}/getMenu`
         );
 
         if (res.data.success) {
@@ -62,7 +63,7 @@ const UserMenu = () => {
               category: item.foodCategory || "main-course",
               isVegetarian: item.isVegetarian || false,
               description: item.description,
-              image: `${process.env.VITE_API_URL}${item.imageUrl}`, // ✅ no need to rebuild URL
+              image: `${import.meta.env.VITE_API_URL}${item.imageUrl}`,
               isAvailable: item.isAvailable,
               popular: item.popular || false,
             }))
