@@ -15,7 +15,9 @@ const bodyParser = require("body-parser");
 
 // 3. Create express app & HTTP server
 const app = express();
+app.set("trust proxy", 1);
 
+const server = http.createServer(app);
 app.use(bodyParser.json());
 
 // 4. Connect to Database
@@ -27,7 +29,6 @@ const session = require("express-session");
 const MongoStore = require("connect-mongo");
 
 // Session middleware (only define once)
-app.set("trust proxy", 1);
 app.use(
   session({
     name: "sessionId",
@@ -37,8 +38,7 @@ app.use(
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
       collectionName: "sessions",
-      ttl: 24 * 60 * 60, // 1 day
-      autoRemove: "native",
+      ttl: 24 * 60 * 60,
     }),
     cookie: {
       secure: true,
@@ -89,5 +89,17 @@ app.get("/api/session-check", (req, res) => {
   });
 });
 
+// 14. Start server
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log(
+    `✅ Server running in ${
+      process.env.NODE_ENV || "development"
+    } mode on port http://localhost:${PORT}/api`
+  );
+  console.log(`🔗 CORS enabled for: ${process.env.CLIENT_URL}`);
+});
+
 // Export for testing
-module.exports = { app };
+module.exports = { app, server };
