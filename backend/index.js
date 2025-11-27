@@ -33,11 +33,22 @@ const server = http.createServer(app);
 // ---- CORS MUST COME BEFORE SESSION ----
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        'https://easyorderin.com',
+        'https://www.easyorderin.com',
+        process.env.CLIENT_URL
+      ].filter(Boolean);
+      
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
-
 // Additional CORS headers for all responses (especially images)
 app.use((req, res, next) => {
   // Set CORS headers for all responses
@@ -110,8 +121,9 @@ app.use(
     cookie: {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
-      secure: isProduction,       // only true in HTTPS
-      sameSite: isProduction ? "none" : "lax", // localhost requires lax
+      secure: true, // Force true for production
+      sameSite: "none", // Required for cross-site cookies
+      domain: process.env.NODE_ENV === "production" ? ".easyorderin.com" : undefined, // Add this
     },
   })
 );
