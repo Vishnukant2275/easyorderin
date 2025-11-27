@@ -343,9 +343,11 @@ const Table = () => {
                       >
                         <QRCodeSVG
                           ref={(el) => (qrRefs.current[tableItem._id] = el)}
-                          value={`${import.meta.env.VITE_SELF_API_URL}/restaurant/${
-                            restaurant._id
-                          }/table/${tableItem.tableNumber}/getMenu`}
+                          value={`${
+                            import.meta.env.VITE_SELF_API_URL
+                          }/restaurant/${restaurant._id}/table/${
+                            tableItem.tableNumber
+                          }/getMenu`}
                           size={qrSize}
                           level="H"
                           includeMargin={true}
@@ -430,7 +432,9 @@ const Table = () => {
                 </div>
                 <div className="modal-body text-center">
                   <QRCodeSVG
-                    value={`/restaurant/${restaurant._id}/table/${selectedTable.tableNumber}/getMenu`}
+                    value={`${import.meta.env.VITE_SELF_API_URL}/restaurant/${
+                      restaurant._id
+                    }/table/${selectedTable.tableNumber}/getMenu`}
                     size={256}
                     level="H"
                     includeMargin={true}

@@ -102,19 +102,16 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI,
-      collectionName: "sessions",
-      ttl: 24 * 60 * 60,
-    }),
+    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
     cookie: {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
-      secure: isProduction,       // only true in HTTPS
-      sameSite: isProduction ? "none" : "lax", // localhost requires lax
+      secure: true,          // required for sameSite="none"
+      sameSite: "none",      // needed for cross-domain (Yolix → Render)
     },
   })
 );
+
 
 // ===============================
 // 6. Routes
