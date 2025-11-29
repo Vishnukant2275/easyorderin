@@ -12,8 +12,12 @@ function AboutPage() {
       <section id="home">
         <HeroSection />
       </section>
+
       <section id="features">
         <FeaturesSection />
+      </section>
+      <section id="pricing">
+        <PricingSection />
       </section>
       <section id="howitworks">
         <HowItWorksSection />
@@ -22,9 +26,7 @@ function AboutPage() {
         </section>
       </section>
       <TestimonialsSection />
-      <section id="pricing">
-        <PricingSection />
-      </section>
+
       <section id="faqs">
         <FAQSection />
       </section>

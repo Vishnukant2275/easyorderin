@@ -35,6 +35,7 @@ app.use(
   cors({
     origin: function (origin, callback) {
       const allowedOrigins = [
+        'http://localhost:5173',
         'https://easyorderin.com',
         'https://www.easyorderin.com',
         process.env.CLIENT_URL
@@ -121,10 +122,9 @@ app.use(
     cookie: {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
-      secure: true, // Force true for production
-      sameSite: "none", // Required for cross-site cookies
-      domain: process.env.NODE_ENV === "production" ? ".easyorderin.com" : undefined, // Add this
-    },
+      secure: false, // Force true for production
+      sameSite: "lax", // Required for cross-site cookies
+   },
   })
 );
 

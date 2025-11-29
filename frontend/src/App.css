@@ -266,3 +266,13 @@ html {
   }
 }
 /* Add this to your global CSS or component */
+.hover-effect:hover {
+  opacity: 0.8;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}

@@ -1,0 +1,407 @@
+.section {
+  padding: 60px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background Elements */
+.backgroundElements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.bgElement1, .bgElement2 {
+  position: absolute;
+  font-size: 80px;
+  opacity: 0.1;
+}
+
+.bgElement1 {
+  top: 10%;
+  left: 5%;
+}
+
+.bgElement2 {
+  top: 60%;
+  right: 10%;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header Section */
+.header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  color: #6c757d;
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.progressContainer {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.progressBar {
+  display: flex;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressSegment {
+  flex: 1;
+  transition: all 0.5s ease;
+  opacity: 0.3;
+}
+
+.progressSegment.active {
+  opacity: 1;
+}
+
+/* Steps Section */
+.stepsWrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-bottom: 50px;
+}
+
+.stepCard {
+  background: white;
+  border-radius: 20px;
+  padding: 30px 25px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.stepCard.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stepCard.active {
+  transform: scale(1.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stepCard:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Connection Line */
+.connectionLine {
+  display: none;
+}
+
+/* Step Number */
+.stepNumber {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #212529;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  border: 3px solid white;
+  z-index: 2;
+}
+
+/* Step Icon */
+.stepIcon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 25px auto;
+  transition: all 0.3s ease;
+}
+
+.stepCard.active .stepIcon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.icon {
+  font-size: 3rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Content */
+.stepTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 15px;
+}
+
+.stepDescription {
+  color: #6c757d;
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+/* Features List */
+.featuresList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 25px 0;
+  text-align: left;
+}
+
+.featureItem {
+  padding: 8px 0;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.checkIcon {
+  color: #51cf66;
+  font-weight: bold;
+  margin-right: 10px;
+  font-size: 1.1rem;
+}
+
+/* Demo Button */
+.demoButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 24px;
+  border: 2px solid #667eea;
+  border-radius: 25px;
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.demoButton:hover {
+  background: var(--button-color);
+  border-color: transparent;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.playIcon {
+  margin-left: 8px;
+  font-size: 0.9rem;
+}
+
+/* CTA Section */
+.ctaSection {
+  text-align: center;
+}
+
+.ctaCard {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ctaTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 15px;
+}
+
+.ctaDescription {
+  color: #6c757d;
+  margin-bottom: 30px;
+  line-height: 1.6;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.primaryButton, .secondaryButton {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.secondaryButton {
+  background: transparent;
+  border: 2px solid #212529;
+  color: #212529;
+}
+
+.secondaryButton:hover {
+  background: #212529;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.buttonIcon {
+  margin-left: 8px;
+  font-size: 0.9rem;
+}
+
+.secondaryButton .buttonIcon {
+  margin-left: 0;
+  margin-right: 8px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .section {
+    padding: 40px 15px;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    padding: 0 10px;
+  }
+
+  .stepsWrapper {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .stepCard {
+    padding: 25px 20px;
+    margin: 0 10px;
+  }
+
+  .stepCard.active {
+    transform: scale(1.02);
+  }
+
+  .stepIcon {
+    width: 80px;
+    height: 80px;
+  }
+
+  .icon {
+    font-size: 2.5rem;
+  }
+
+  .stepTitle {
+    font-size: 1.3rem;
+  }
+
+  .ctaCard {
+    padding: 30px 20px;
+    margin: 0 10px;
+  }
+
+  .ctaTitle {
+    font-size: 1.5rem;
+  }
+
+  .ctaButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .primaryButton, .secondaryButton {
+    width: 200px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.7rem;
+  }
+
+  .stepCard {
+    padding: 20px 15px;
+    margin: 0 5px;
+  }
+
+  .stepIcon {
+    width: 70px;
+    height: 70px;
+  }
+
+  .icon {
+    font-size: 2rem;
+  }
+
+  .stepTitle {
+    font-size: 1.2rem;
+  }
+
+  .featureItem {
+    font-size: 0.85rem;
+  }
+
+  .ctaCard {
+    padding: 25px 15px;
+  }
+}

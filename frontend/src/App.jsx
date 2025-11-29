@@ -12,6 +12,7 @@ import RestaurantDashboard from "./layouts/RestaurantDashboard";
 import StatusCards from "./components/StatusCards";
 import AdminRouter from "./router/AdminRouter";
 import DashboardRouter from "./router/DashboardRouter";
+import PolicyRouter from "./router/PolicyRouter.jsx";
 import User from "./layouts/User";
 import { ToastContainer } from "react-toastify";
 
@@ -19,8 +20,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        
+         
         <Route path="/" element={<Home />}>
           <Route index element={<AboutPage />} />
+          <Route path="/policy/*" element={<PolicyRouter/>}/>
           <Route path="status" element={<StatusCards />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="restaurant/*" element={<RestaurantRouter />} />
