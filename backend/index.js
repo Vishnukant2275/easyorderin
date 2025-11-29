@@ -122,8 +122,8 @@ app.use(
     cookie: {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
-      secure: false, // Force true for production
-      sameSite: "lax", // Required for cross-site cookies
+      secure: true, // Force true for production
+      sameSite: "none", // Required for cross-site cookies
    },
   })
 );
